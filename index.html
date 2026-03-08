@@ -129,6 +129,8 @@
     #toast.show{transform:translateX(-50%) translateY(0)}
 
     /* CONFIRM MODAL */
+    .modal-wrap{display:none!important}
+    .modal-wrap.show{display:flex!important}
     #confirmModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.78);z-index:150;align-items:center;justify-content:center;padding:24px}
     #confirmModal.show{display:flex}
     .confirm-box{background:#ffffff;border:1px solid var(--border);border-radius:14px;padding:28px 24px;width:100%;max-width:340px}
@@ -151,9 +153,14 @@
 <div id="app">
 
   <div class="header">
-    <div class="header-title">Receipt Ledger</div>
-    <div class="header-sub">Property Management · Tax Tracker</div>
-    <div class="offline-badge" id="offlineBadge">● Offline</div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div>
+        <div class="header-title">Receipt Ledger</div>
+        <div class="header-sub">Property Management · Tax Tracker</div>
+        <div class="offline-badge" id="offlineBadge">● Offline</div>
+      </div>
+      <button onclick="openSettings()" style="background:none;border:none;font-size:22px;cursor:pointer;padding:4px;margin-top:4px;color:var(--muted)" title="API Settings">⚙️</button>
+    </div>
   </div>
 
   <div class="tab-bar">
@@ -263,6 +270,21 @@
     </div>
   </div>
 
+</div>
+
+<!-- SETTINGS MODAL -->
+<div id="settingsModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:150;align-items:center;justify-content:center;padding:24px" class="modal-wrap">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:28px 24px;width:100%;max-width:360px">
+    <div style="font-family:'DM Serif Display',serif;font-size:20px;margin-bottom:8px;color:var(--text)">API Key Setup</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:6px;line-height:1.6">Your Anthropic API key is stored privately on this device only — never uploaded anywhere.</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:20px;line-height:1.6">Get your key at <strong>console.anthropic.com</strong> → API Keys → Create Key.</div>
+    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px">API Key</div>
+    <input id="apiKeyInput" type="password" placeholder="sk-ant-api03-..." style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-family:'DM Mono',monospace;font-size:13px;color:var(--text);outline:none;margin-bottom:16px" />
+    <div style="display:flex;gap:10px">
+      <button onclick="closeSettings()" style="flex:1;padding:13px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;border-radius:8px;cursor:pointer;background:var(--bg);color:var(--muted);border:1px solid var(--border)">Cancel</button>
+      <button onclick="submitApiKey()" style="flex:1;padding:13px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;border-radius:8px;cursor:pointer;background:var(--gold);color:#fff;border:none">Save Key</button>
+    </div>
+  </div>
 </div>
 
 <!-- CONFIRM DELETE MODAL -->
@@ -466,6 +488,7 @@ function compressImage(dataUrl, maxW, quality) {
 
 async function extractWithAI(){
   if(!currentImgData)return;
+  if(!getApiKey()){ openSettings(); showToast('Enter your API key first'); return; }
   const btn=document.getElementById('btnExtract');
   btn.disabled=true; btn.textContent='Reading receipt...'; btn.classList.add('loading');
   try{
@@ -478,7 +501,7 @@ async function extractWithAI(){
         method:'POST',
         headers:{
           'Content-Type':'application/json',
-          'x-api-key':'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',
+          'x-api-key': getApiKey(),
           'anthropic-version':'2023-06-01',
           'anthropic-dangerous-direct-browser-access':'true'
         },
@@ -517,6 +540,23 @@ async function extractWithAI(){
     showToast('Failed: ' + (e.message||'unknown error').slice(0,60));
     btn.disabled=false; btn.textContent='✦ Extract with AI'; btn.classList.remove('loading');
   }
+}
+
+/* ── API KEY ──────────────────────────────────────── */
+function getApiKey(){ return localStorage.getItem('rl_apikey')||''; }
+function saveApiKey(k){ localStorage.setItem('rl_apikey', k.trim()); }
+function openSettings(){
+  const k=getApiKey();
+  document.getElementById('apiKeyInput').value=k?'sk-ant-...'+k.slice(-6):'';
+  document.getElementById('settingsModal').classList.add('show');
+}
+function closeSettings(){ document.getElementById('settingsModal').classList.remove('show'); }
+function submitApiKey(){
+  const val=document.getElementById('apiKeyInput').value.trim();
+  if(!val.startsWith('sk-ant-')){ showToast('Invalid key — must start with sk-ant-'); return; }
+  saveApiKey(val);
+  closeSettings();
+  showToast('API key saved ✓');
 }
 
 /* ── DROPDOWNS ────────────────────────────────────── */
