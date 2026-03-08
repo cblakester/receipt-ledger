@@ -17,7 +17,7 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    :root{--gold:#c8a96e;--gold-light:#d4b97a;--bg:#0f0e0c;--bg2:#141310;--bg3:#1a1810;--border:#2a2820;--text:#e8e3d8;--muted:#6b6558;--dim:#3f3c32;--red:#c0513a;--red-bg:#2a1510}
+    :root{--gold:#9a6f2e;--gold-light:#b8873a;--bg:#f5f2ed;--bg2:#ffffff;--bg3:#ede9e2;--border:#d4cfc6;--text:#1a1814;--muted:#7a7068;--dim:#a09890;--red:#c0513a;--red-bg:#fdf0ed}
     html,body{height:100%;font-family:'DM Mono',monospace;background:var(--bg);color:var(--text);overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
     #app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom,20px)}
 
@@ -36,7 +36,7 @@
 
     /* PHOTO BUTTONS */
     .photo-btns{display:flex;gap:10px;margin-bottom:0}
-    .photo-btn{flex:1;padding:22px 10px;border:1.5px dashed #3a3828;border-radius:12px;background:var(--bg2);cursor:pointer;text-align:center;font-family:'DM Mono',monospace;color:var(--muted);transition:all 0.2s;font-size:11px;letter-spacing:1px}
+    .photo-btn{flex:1;padding:22px 10px;border:1.5px dashed #c4bfb6;border-radius:12px;background:var(--bg2);cursor:pointer;text-align:center;font-family:'DM Mono',monospace;color:var(--muted);transition:all 0.2s;font-size:11px;letter-spacing:1px}
     .photo-btn:active{border-color:var(--gold);background:var(--bg3);color:var(--gold)}
     .photo-btn .pb-icon{font-size:28px;margin-bottom:8px;display:block}
     #fileCamera,#fileGallery{display:none}
@@ -65,12 +65,12 @@
     .btn-gold.loading{animation:pulse 1.2s infinite}
     .btn-outline{width:100%;padding:14px;background:transparent;color:var(--gold);font-family:'DM Mono',monospace;font-size:11px;font-weight:500;letter-spacing:2px;text-transform:uppercase;border:1.5px solid var(--gold);border-radius:8px;cursor:pointer;transition:all 0.2s;margin-top:8px}
     .btn-outline:active{background:var(--gold);color:var(--bg)}
-    .btn-ghost{width:100%;padding:10px;background:none;border:1px dashed var(--border);border-radius:8px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#3a3828;cursor:pointer;margin-top:12px;transition:all 0.2s}
+    .btn-ghost{width:100%;padding:10px;background:none;border:1px dashed var(--border);border-radius:8px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);cursor:pointer;margin-top:12px;transition:all 0.2s}
     .btn-ghost:active{color:var(--muted)}
     @keyframes pulse{0%,100%{opacity:0.7}50%{opacity:0.4}}
 
     /* AI BADGE */
-    .ai-badge{display:none;align-items:center;gap:6px;background:#1e1d15;border:1px solid #3a3620;border-radius:20px;padding:5px 12px;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);margin-bottom:14px;width:fit-content}
+    .ai-badge{display:none;align-items:center;gap:6px;background:#fdf8f0;border:1px solid #e8d8b8;border-radius:20px;padding:5px 12px;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);margin-bottom:14px;width:fit-content}
     .ai-badge.show{display:flex}
     .ai-dot{width:5px;height:5px;background:var(--gold);border-radius:50%;animation:blink 2s infinite}
     @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
@@ -100,27 +100,27 @@
     .filter-row{display:flex;gap:7px;margin-bottom:10px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
     .filter-row::-webkit-scrollbar{display:none}
     .chip{flex-shrink:0;padding:6px 13px;background:var(--bg2);border:1px solid var(--border);border-radius:20px;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);cursor:pointer;font-family:'DM Mono',monospace;white-space:nowrap;transition:all 0.15s}
-    .chip.active{background:#1e1d15;border-color:var(--gold);color:var(--gold)}
+    .chip.active{background:#fdf8f0;border-color:var(--gold);color:var(--gold)}
 
     /* RECEIPT CARDS */
     .receipt-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start}
     .receipt-thumb{width:52px;height:52px;object-fit:cover;border-radius:6px;border:1px solid var(--border);flex-shrink:0;cursor:pointer}
-    .receipt-no-thumb{width:52px;height:52px;background:#1e1d18;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+    .receipt-no-thumb{width:52px;height:52px;background:#ede9e2;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
     .receipt-info{flex:1;min-width:0}
     .receipt-vendor{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
     .receipt-meta{font-size:10px;color:var(--muted);margin-bottom:5px}
     .receipt-tags{display:flex;gap:5px;flex-wrap:wrap}
     .tag{font-size:9px;letter-spacing:1px;padding:2px 7px;border-radius:4px;text-transform:uppercase}
-    .tag-prop{background:#1a1e2a;color:#7a9ab8;border:1px solid #242a3a}
-    .tag-cat{background:#1e2a1a;color:#7ab87a;border:1px solid #2a3a24}
-    .receipt-note{font-size:10px;color:#4a4740;margin-top:5px;font-style:italic}
+    .tag-prop{background:#e8eef5;color:#3a6a9a;border:1px solid #c8d8ea}
+    .tag-cat{background:#eaf5e8;color:#3a7a34;border:1px solid #c0daba}
+    .receipt-note{font-size:10px;color:#9a9088;margin-top:5px;font-style:italic}
     .receipt-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0}
     .receipt-amount{font-family:'DM Serif Display',serif;font-size:18px;color:var(--gold);white-space:nowrap}
     .btn-delete{padding:8px 14px;background:var(--red-bg);border:1px solid #3a2015;border-radius:6px;color:var(--red);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;cursor:pointer;transition:all 0.2s;white-space:nowrap}
     .btn-delete:active{background:var(--red);color:#fff}
 
     /* EMPTY */
-    .empty-state{text-align:center;padding:60px 20px;color:#3a3828}
+    .empty-state{text-align:center;padding:60px 20px;color:#c4bfb6}
     .empty-state .ei{font-size:40px;margin-bottom:12px}
     .empty-state .et{font-size:11px;letter-spacing:1px}
 
@@ -131,7 +131,7 @@
     /* CONFIRM MODAL */
     #confirmModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.78);z-index:150;align-items:center;justify-content:center;padding:24px}
     #confirmModal.show{display:flex}
-    .confirm-box{background:#1a1810;border:1px solid var(--border);border-radius:14px;padding:28px 24px;width:100%;max-width:340px}
+    .confirm-box{background:#ffffff;border:1px solid var(--border);border-radius:14px;padding:28px 24px;width:100%;max-width:340px}
     .confirm-title{font-family:'DM Serif Display',serif;font-size:20px;margin-bottom:8px}
     .confirm-msg{font-size:12px;color:var(--muted);margin-bottom:24px;line-height:1.6}
     .confirm-btns{display:flex;gap:10px}
@@ -457,7 +457,7 @@ async function extractWithAI(){
     const base64=currentImgData.split(',')[1];
     const mediaType=currentImgData.split(';')[0].split(':')[1];
     const res=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',headers:{'Content-Type':'application/json'},
+      method:'POST',headers:{'Content-Type':'application/json','x-api-key':'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','anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
       body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,
         messages:[{role:'user',content:[
           {type:'image',source:{type:'base64',media_type:mediaType,data:base64}},
