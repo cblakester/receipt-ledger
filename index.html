@@ -449,13 +449,29 @@ function cancelCrop(){
 }
 
 /* ── AI EXTRACT ───────────────────────────────────── */
+function compressImage(dataUrl, maxW, quality) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, maxW / img.width);
+      const canvas = document.createElement('canvas');
+      canvas.width  = img.width  * scale;
+      canvas.height = img.height * scale;
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.src = dataUrl;
+  });
+}
+
 async function extractWithAI(){
   if(!currentImgData)return;
   const btn=document.getElementById('btnExtract');
   btn.disabled=true; btn.textContent='Reading receipt...'; btn.classList.add('loading');
   try{
-    const base64=currentImgData.split(',')[1];
-    const mediaType=currentImgData.split(';')[0].split(':')[1];
+    const compressed = await compressImage(currentImgData, 1200, 0.82);
+    const base64=compressed.split(',')[1];
+    const mediaType='image/jpeg';
     const res=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',headers:{'Content-Type':'application/json','x-api-key':'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','anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
       body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,
@@ -465,6 +481,7 @@ async function extractWithAI(){
         ]}]})
     });
     const data=await res.json();
+    if(data.error){ showToast('API: ' + data.error.message.slice(0,80)); btn.disabled=false; btn.textContent='✦ Extract with AI'; btn.classList.remove('loading'); return; }
     const text=(data.content||[]).map(b=>b.text||'').join('');
     const parsed=JSON.parse(text.replace(/```json|```/g,'').trim());
     if(parsed.vendor)document.getElementById('fVendor').value=parsed.vendor;
@@ -473,7 +490,7 @@ async function extractWithAI(){
     btn.style.display='none';
     document.getElementById('aiBadge').classList.add('show');
   }catch(e){
-    showToast('Could not read receipt — fill in manually');
+    showToast('Error: ' + (e.message || JSON.stringify(e)).slice(0, 80));
     btn.disabled=false; btn.textContent='✦ Extract with AI'; btn.classList.remove('loading');
   }
 }
