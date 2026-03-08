@@ -4,430 +4,152 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Receipt Ledger</title>
-
-  <!-- PWA Meta -->
   <meta name="theme-color" content="#0f0e0c" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Receipt Ledger" />
   <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230f0e0c'/%3E%3Ctext y='.9em' font-size='80' x='10'%3E🧾%3C/text%3E%3C/svg%3E" />
-
-  <!-- Inline Manifest via JS (no separate file needed) -->
   <script>
-    const manifestData = {
-      name: "Receipt Ledger",
-      short_name: "Receipts",
-      description: "Property management receipt tracker",
-      start_url: "./",
-      display: "standalone",
-      background_color: "#0f0e0c",
-      theme_color: "#0f0e0c",
-      icons: [{
-        src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230f0e0c'/%3E%3Ctext y='.9em' font-size='80' x='10'%3E%F0%9F%A7%BE%3C/text%3E%3C/svg%3E",
-        sizes: "192x192",
-        type: "image/svg+xml"
-      }]
-    };
-    const blob = new Blob([JSON.stringify(manifestData)], {type: 'application/json'});
-    const manifestURL = URL.createObjectURL(blob);
-    const link = document.createElement('link');
-    link.rel = 'manifest';
-    link.href = manifestURL;
-    document.currentScript.parentElement.appendChild(link);
+    const _md={name:"Receipt Ledger",short_name:"Receipts",description:"Property management receipt tracker",start_url:"./",display:"standalone",background_color:"#0f0e0c",theme_color:"#0f0e0c",icons:[{src:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230f0e0c'/%3E%3Ctext y='.9em' font-size='80' x='10'%3E%F0%9F%A7%BE%3C/text%3E%3C/svg%3E",sizes:"192x192",type:"image/svg+xml"}]};
+    const _ml=document.createElement('link');_ml.rel='manifest';_ml.href=URL.createObjectURL(new Blob([JSON.stringify(_md)],{type:'application/json'}));document.currentScript.parentElement.appendChild(_ml);
   </script>
-
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
-
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--gold:#c8a96e;--gold-light:#d4b97a;--bg:#0f0e0c;--bg2:#141310;--bg3:#1a1810;--border:#2a2820;--text:#e8e3d8;--muted:#6b6558;--dim:#3f3c32;--red:#c0513a;--red-bg:#2a1510}
+    html,body{height:100%;font-family:'DM Mono',monospace;background:var(--bg);color:var(--text);overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
+    #app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom,20px)}
 
-    :root {
-      --gold: #c8a96e;
-      --gold-light: #d4b97a;
-      --bg: #0f0e0c;
-      --bg2: #141310;
-      --bg3: #1a1810;
-      --border: #2a2820;
-      --text: #e8e3d8;
-      --muted: #6b6558;
-      --dim: #3f3c32;
-    }
+    .header{padding:44px 24px 16px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg);z-index:10}
+    .header-title{font-family:'DM Serif Display',serif;font-size:26px;letter-spacing:-0.5px}
+    .header-sub{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-top:3px}
+    .offline-badge{display:none;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--red);background:var(--red-bg);border:1px solid #3a2015;border-radius:10px;padding:2px 8px;margin-top:4px;width:fit-content}
+    .offline-badge.show{display:block}
 
-    html, body {
-      height: 100%;
-      font-family: 'DM Mono', monospace;
-      background: var(--bg);
-      color: var(--text);
-      overscroll-behavior: none;
-      -webkit-tap-highlight-color: transparent;
-    }
+    .tab-bar{display:flex;border-bottom:1px solid var(--border);padding:0 24px;background:var(--bg);position:sticky;top:86px;z-index:9}
+    .tab{padding:14px 0;margin-right:28px;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);cursor:pointer;border:none;border-bottom:2px solid transparent;background:none;font-family:'DM Mono',monospace;transition:all 0.2s}
+    .tab.active{color:var(--gold);border-bottom:2px solid var(--gold)}
 
-    #app {
-      max-width: 480px;
-      margin: 0 auto;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      padding-bottom: env(safe-area-inset-bottom, 20px);
-    }
+    .section{padding:24px;flex:1;display:none}
+    .section.active{display:block}
 
-    /* HEADER */
-    .header {
-      padding: 44px 24px 18px;
-      border-bottom: 1px solid var(--border);
-      position: sticky;
-      top: 0;
-      background: var(--bg);
-      z-index: 10;
-    }
-    .header-title {
-      font-family: 'DM Serif Display', serif;
-      font-size: 26px;
-      letter-spacing: -0.5px;
-    }
-    .header-sub {
-      font-size: 10px;
-      color: var(--muted);
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      margin-top: 3px;
-    }
-    .offline-badge {
-      display: none;
-      font-size: 9px;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      color: #c0513a;
-      background: #2a1510;
-      border: 1px solid #3a2015;
-      border-radius: 10px;
-      padding: 2px 8px;
-      margin-top: 4px;
-      width: fit-content;
-    }
-    .offline-badge.show { display: block; }
-
-    /* TABS */
-    .tab-bar {
-      display: flex;
-      border-bottom: 1px solid var(--border);
-      padding: 0 24px;
-      background: var(--bg);
-      position: sticky;
-      top: 89px;
-      z-index: 9;
-    }
-    .tab {
-      padding: 14px 0;
-      margin-right: 28px;
-      font-size: 11px;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      color: var(--muted);
-      cursor: pointer;
-      border: none;
-      border-bottom: 2px solid transparent;
-      background: none;
-      font-family: 'DM Mono', monospace;
-      transition: all 0.2s;
-      color: var(--muted);
-    }
-    .tab.active { color: var(--gold); border-bottom: 2px solid var(--gold); }
-
-    /* SECTION */
-    .section { padding: 24px; flex: 1; display: none; }
-    .section.active { display: block; }
-
-    /* UPLOAD ZONE */
-    .upload-zone {
-      border: 1.5px dashed #3a3828;
-      border-radius: 12px;
-      padding: 40px 24px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.25s;
-      background: var(--bg2);
-    }
-    .upload-zone:active, .upload-zone.dragover {
-      border-color: var(--gold);
-      background: var(--bg3);
-    }
-    .upload-zone .uz-icon { font-size: 36px; margin-bottom: 12px; opacity: 0.6; }
-    .upload-zone .uz-label { font-size: 12px; color: var(--muted); letter-spacing: 1px; }
-    .upload-zone .uz-sub { font-size: 10px; color: var(--dim); margin-top: 6px; }
-    #fileInput { display: none; }
+    /* PHOTO BUTTONS */
+    .photo-btns{display:flex;gap:10px;margin-bottom:0}
+    .photo-btn{flex:1;padding:22px 10px;border:1.5px dashed #3a3828;border-radius:12px;background:var(--bg2);cursor:pointer;text-align:center;font-family:'DM Mono',monospace;color:var(--muted);transition:all 0.2s;font-size:11px;letter-spacing:1px}
+    .photo-btn:active{border-color:var(--gold);background:var(--bg3);color:var(--gold)}
+    .photo-btn .pb-icon{font-size:28px;margin-bottom:8px;display:block}
+    #fileCamera,#fileGallery{display:none}
 
     /* PREVIEW */
-    #previewImg {
-      width: 100%;
-      max-height: 220px;
-      object-fit: cover;
-      border-radius: 10px;
-      margin-bottom: 16px;
-      border: 1px solid var(--border);
-      display: none;
-      cursor: pointer;
-    }
+    #previewWrap{display:none;margin-bottom:14px}
+    #previewImg{width:100%;max-height:220px;object-fit:cover;border-radius:10px;border:1px solid var(--border);display:block}
+    .preview-actions{display:flex;gap:8px;margin-top:8px}
+    .preview-actions button{flex:1;padding:10px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);cursor:pointer;transition:all 0.2s}
+    .preview-actions button:active{color:var(--gold);border-color:var(--gold)}
 
-    /* BUTTONS */
-    .btn-gold {
-      width: 100%;
-      padding: 14px;
-      background: var(--gold);
-      color: var(--bg);
-      font-family: 'DM Mono', monospace;
-      font-size: 11px;
-      font-weight: 500;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.2s;
-      margin-bottom: 16px;
-    }
-    .btn-gold:active { background: var(--gold-light); transform: scale(0.98); }
-    .btn-gold:disabled { opacity: 0.35; cursor: not-allowed; }
-    .btn-gold.loading { animation: pulse 1.2s infinite; }
+    /* CROP */
+    #cropWrap{display:none;margin-bottom:14px}
+    #cropCanvas{width:100%;border-radius:10px;border:1px solid var(--border);touch-action:none;cursor:crosshair;display:block}
+    .crop-hint{font-size:10px;color:var(--muted);text-align:center;margin-top:6px;letter-spacing:1px}
+    .crop-actions{display:flex;gap:8px;margin-top:10px}
+    .crop-actions button{flex:1;padding:12px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;border-radius:8px;cursor:pointer;border:none;transition:all 0.2s}
+    .btn-crop-ok{background:var(--gold);color:var(--bg)}
+    .btn-crop-ok:active{background:var(--gold-light)}
+    .btn-crop-cancel{background:var(--bg2);color:var(--muted);border:1px solid var(--border)!important}
 
-    .btn-outline {
-      width: 100%;
-      padding: 14px;
-      background: transparent;
-      color: var(--gold);
-      font-family: 'DM Mono', monospace;
-      font-size: 11px;
-      font-weight: 500;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      border: 1.5px solid var(--gold);
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.2s;
-      margin-top: 8px;
-    }
-    .btn-outline:active { background: var(--gold); color: var(--bg); }
-    .btn-outline:disabled { opacity: 0.35; }
-
-    .btn-ghost {
-      width: 100%;
-      padding: 10px;
-      background: none;
-      border: 1px dashed var(--border);
-      border-radius: 8px;
-      font-family: 'DM Mono', monospace;
-      font-size: 10px;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      color: #3a3828;
-      cursor: pointer;
-      margin-top: 14px;
-      transition: all 0.2s;
-    }
-    .btn-ghost:active { color: var(--muted); border-color: #3a3828; }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 0.7; }
-      50% { opacity: 0.4; }
-    }
+    /* GENERAL BUTTONS */
+    .btn-gold{width:100%;padding:14px;background:var(--gold);color:var(--bg);font-family:'DM Mono',monospace;font-size:11px;font-weight:500;letter-spacing:2px;text-transform:uppercase;border:none;border-radius:8px;cursor:pointer;transition:all 0.2s;margin-bottom:14px}
+    .btn-gold:active{background:var(--gold-light);transform:scale(0.98)}
+    .btn-gold:disabled{opacity:0.35;cursor:not-allowed;transform:none}
+    .btn-gold.loading{animation:pulse 1.2s infinite}
+    .btn-outline{width:100%;padding:14px;background:transparent;color:var(--gold);font-family:'DM Mono',monospace;font-size:11px;font-weight:500;letter-spacing:2px;text-transform:uppercase;border:1.5px solid var(--gold);border-radius:8px;cursor:pointer;transition:all 0.2s;margin-top:8px}
+    .btn-outline:active{background:var(--gold);color:var(--bg)}
+    .btn-ghost{width:100%;padding:10px;background:none;border:1px dashed var(--border);border-radius:8px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#3a3828;cursor:pointer;margin-top:12px;transition:all 0.2s}
+    .btn-ghost:active{color:var(--muted)}
+    @keyframes pulse{0%,100%{opacity:0.7}50%{opacity:0.4}}
 
     /* AI BADGE */
-    .ai-badge {
-      display: none;
-      align-items: center;
-      gap: 6px;
-      background: #1e1d15;
-      border: 1px solid #3a3620;
-      border-radius: 20px;
-      padding: 5px 12px;
-      font-size: 9px;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      color: var(--gold);
-      margin-bottom: 16px;
-      width: fit-content;
-    }
-    .ai-badge.show { display: flex; }
-    .ai-dot {
-      width: 5px; height: 5px;
-      background: var(--gold);
-      border-radius: 50%;
-      animation: blink 2s infinite;
-    }
-    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .ai-badge{display:none;align-items:center;gap:6px;background:#1e1d15;border:1px solid #3a3620;border-radius:20px;padding:5px 12px;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);margin-bottom:14px;width:fit-content}
+    .ai-badge.show{display:flex}
+    .ai-dot{width:5px;height:5px;background:var(--gold);border-radius:50%;animation:blink 2s infinite}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
 
-    /* FORM FIELDS */
-    .divider { border: none; border-top: 1px solid #1e1d18; margin: 18px 0; }
+    /* FORM */
+    .divider{border:none;border-top:1px solid #1e1d18;margin:16px 0}
+    .field{margin-bottom:13px}
+    .field label{display:block;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+    .field input,.field select,.field textarea{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-family:'DM Mono',monospace;font-size:14px;color:var(--text);outline:none;transition:border-color 0.2s;-webkit-appearance:none;appearance:none}
+    .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--gold)}
+    .field textarea{resize:vertical;min-height:68px;font-size:12px}
+    .field select option{background:#1a1810}
+    .row-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .amount-wrap{position:relative}
+    .amount-wrap .dollar{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px;pointer-events:none}
+    .amount-wrap input{padding-left:28px}
 
-    .field { margin-bottom: 14px; }
-    .field label {
-      display: block;
-      font-size: 9px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 6px;
-    }
-    .field input, .field select, .field textarea {
-      width: 100%;
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 11px 14px;
-      font-family: 'DM Mono', monospace;
-      font-size: 14px;
-      color: var(--text);
-      outline: none;
-      transition: border-color 0.2s;
-      -webkit-appearance: none;
-      appearance: none;
-    }
-    .field input:focus, .field select:focus, .field textarea:focus {
-      border-color: var(--gold);
-    }
-    .field textarea { resize: vertical; min-height: 70px; font-size: 12px; }
-    .field select option { background: #1a1810; }
+    /* SUMMARY */
+    .summary-bar{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:12px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .stat-label{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+    .stat-val{font-family:'DM Serif Display',serif;font-size:22px;color:var(--gold)}
 
-    .row-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-
-    .amount-wrap { position: relative; }
-    .amount-wrap .dollar {
-      position: absolute; left: 14px; top: 50%;
-      transform: translateY(-50%);
-      color: var(--muted); font-size: 14px; pointer-events: none;
-    }
-    .amount-wrap input { padding-left: 28px; }
-
-    /* SUMMARY BAR */
-    .summary-bar {
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 16px;
-      margin-bottom: 14px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-    .stat-label { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
-    .stat-val { font-family: 'DM Serif Display', serif; font-size: 22px; color: var(--gold); }
+    .export-row{display:flex;gap:8px;margin-bottom:14px}
+    .export-row .btn-gold{margin-bottom:0;flex:1;font-size:10px;padding:12px 6px}
 
     /* FILTER CHIPS */
-    .filter-row { display: flex; gap: 7px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
-    .filter-row::-webkit-scrollbar { display: none; }
-    .chip {
-      flex-shrink: 0;
-      padding: 5px 12px;
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      font-size: 9px;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      color: var(--muted);
-      cursor: pointer;
-      font-family: 'DM Mono', monospace;
-      white-space: nowrap;
-      transition: all 0.15s;
-    }
-    .chip.active { background: #1e1d15; border-color: var(--gold); color: var(--gold); }
+    .filter-row{display:flex;gap:7px;margin-bottom:10px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+    .filter-row::-webkit-scrollbar{display:none}
+    .chip{flex-shrink:0;padding:6px 13px;background:var(--bg2);border:1px solid var(--border);border-radius:20px;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);cursor:pointer;font-family:'DM Mono',monospace;white-space:nowrap;transition:all 0.15s}
+    .chip.active{background:#1e1d15;border-color:var(--gold);color:var(--gold)}
 
     /* RECEIPT CARDS */
-    .receipt-card {
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 14px;
-      margin-bottom: 10px;
-      display: flex;
-      gap: 12px;
-      align-items: flex-start;
-      position: relative;
-    }
-    .receipt-thumb {
-      width: 48px; height: 48px;
-      object-fit: cover;
-      border-radius: 6px;
-      border: 1px solid var(--border);
-      flex-shrink: 0;
-      cursor: pointer;
-    }
-    .receipt-no-thumb {
-      width: 48px; height: 48px;
-      background: #1e1d18;
-      border-radius: 6px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 20px; flex-shrink: 0;
-    }
-    .receipt-info { flex: 1; min-width: 0; }
-    .receipt-vendor { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
-    .receipt-meta { font-size: 10px; color: var(--muted); margin-bottom: 5px; }
-    .receipt-tags { display: flex; gap: 5px; flex-wrap: wrap; }
-    .tag {
-      font-size: 9px; letter-spacing: 1px;
-      padding: 2px 7px; border-radius: 4px;
-      text-transform: uppercase;
-    }
-    .tag-prop { background: #1a1e2a; color: #7a9ab8; border: 1px solid #242a3a; }
-    .tag-cat  { background: #1e2a1a; color: #7ab87a; border: 1px solid #2a3a24; }
-    .receipt-note { font-size: 10px; color: #4a4740; margin-top: 5px; font-style: italic; }
-    .receipt-amount { font-family: 'DM Serif Display', serif; font-size: 18px; color: var(--gold); white-space: nowrap; flex-shrink: 0; }
-    .receipt-delete {
-      position: absolute; top: 10px; right: 10px;
-      background: none; border: none; color: #3a3828;
-      cursor: pointer; font-size: 14px; line-height: 1;
-      padding: 4px;
-    }
-    .receipt-delete:active { color: #c0513a; }
+    .receipt-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start}
+    .receipt-thumb{width:52px;height:52px;object-fit:cover;border-radius:6px;border:1px solid var(--border);flex-shrink:0;cursor:pointer}
+    .receipt-no-thumb{width:52px;height:52px;background:#1e1d18;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+    .receipt-info{flex:1;min-width:0}
+    .receipt-vendor{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
+    .receipt-meta{font-size:10px;color:var(--muted);margin-bottom:5px}
+    .receipt-tags{display:flex;gap:5px;flex-wrap:wrap}
+    .tag{font-size:9px;letter-spacing:1px;padding:2px 7px;border-radius:4px;text-transform:uppercase}
+    .tag-prop{background:#1a1e2a;color:#7a9ab8;border:1px solid #242a3a}
+    .tag-cat{background:#1e2a1a;color:#7ab87a;border:1px solid #2a3a24}
+    .receipt-note{font-size:10px;color:#4a4740;margin-top:5px;font-style:italic}
+    .receipt-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0}
+    .receipt-amount{font-family:'DM Serif Display',serif;font-size:18px;color:var(--gold);white-space:nowrap}
+    .btn-delete{padding:8px 14px;background:var(--red-bg);border:1px solid #3a2015;border-radius:6px;color:var(--red);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;cursor:pointer;transition:all 0.2s;white-space:nowrap}
+    .btn-delete:active{background:var(--red);color:#fff}
 
-    /* EMPTY STATE */
-    .empty-state { text-align: center; padding: 60px 20px; color: #3a3828; }
-    .empty-state .ei { font-size: 40px; margin-bottom: 12px; }
-    .empty-state .et { font-size: 11px; letter-spacing: 1px; }
+    /* EMPTY */
+    .empty-state{text-align:center;padding:60px 20px;color:#3a3828}
+    .empty-state .ei{font-size:40px;margin-bottom:12px}
+    .empty-state .et{font-size:11px;letter-spacing:1px}
 
     /* TOAST */
-    #toast {
-      position: fixed;
-      bottom: calc(30px + env(safe-area-inset-bottom, 0px));
-      left: 50%;
-      transform: translateX(-50%) translateY(80px);
-      background: var(--gold);
-      color: var(--bg);
-      padding: 12px 24px;
-      border-radius: 30px;
-      font-size: 11px;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      font-weight: 500;
-      z-index: 100;
-      transition: transform 0.3s ease;
-      white-space: nowrap;
-    }
-    #toast.show { transform: translateX(-50%) translateY(0); }
+    #toast{position:fixed;bottom:calc(30px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%) translateY(80px);background:var(--gold);color:var(--bg);padding:12px 24px;border-radius:30px;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;font-weight:500;z-index:200;transition:transform 0.3s ease;white-space:nowrap;pointer-events:none}
+    #toast.show{transform:translateX(-50%) translateY(0)}
+
+    /* CONFIRM MODAL */
+    #confirmModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.78);z-index:150;align-items:center;justify-content:center;padding:24px}
+    #confirmModal.show{display:flex}
+    .confirm-box{background:#1a1810;border:1px solid var(--border);border-radius:14px;padding:28px 24px;width:100%;max-width:340px}
+    .confirm-title{font-family:'DM Serif Display',serif;font-size:20px;margin-bottom:8px}
+    .confirm-msg{font-size:12px;color:var(--muted);margin-bottom:24px;line-height:1.6}
+    .confirm-btns{display:flex;gap:10px}
+    .confirm-btns button{flex:1;padding:13px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;border-radius:8px;cursor:pointer;border:none;transition:all 0.2s}
+    .btn-cc{background:var(--bg2);color:var(--muted);border:1px solid var(--border)!important}
+    .btn-cd{background:var(--red);color:#fff}
+    .btn-cd:active{opacity:0.8}
 
     /* IMAGE VIEWER */
-    #imgViewer {
-      display: none;
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,0.92);
-      z-index: 200;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-    #imgViewer.show { display: flex; }
-    #imgViewer img { max-width: 100%; max-height: 90vh; border-radius: 8px; }
-    #imgViewer-close {
-      position: absolute; top: 20px; right: 20px;
-      background: none; border: none; color: #fff;
-      font-size: 28px; cursor: pointer; line-height: 1;
-    }
+    #imgViewer{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.93);z-index:160;align-items:center;justify-content:center;padding:20px}
+    #imgViewer.show{display:flex}
+    #viewerImg{max-width:100%;max-height:90vh;border-radius:8px}
+    #ivClose{position:absolute;top:20px;right:20px;background:none;border:none;color:#fff;font-size:30px;cursor:pointer;line-height:1;padding:8px}
   </style>
 </head>
 <body>
-
 <div id="app">
+
   <div class="header">
     <div class="header-title">Receipt Ledger</div>
     <div class="header-sub">Property Management · Tax Tracker</div>
@@ -439,21 +161,46 @@
     <button class="tab" id="tab-receipts" onclick="showTab('receipts')">Receipts</button>
   </div>
 
-  <!-- CAPTURE TAB -->
+  <!-- ── CAPTURE TAB ── -->
   <div class="section active" id="sec-capture">
-    <input type="file" id="fileInput" accept="image/*" capture="environment" onchange="handleFileInput(this)" />
 
-    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
-      <div class="uz-icon">📷</div>
-      <div class="uz-label">Take photo or upload receipt</div>
-      <div class="uz-sub">JPEG · PNG · HEIC</div>
+    <input type="file" id="fileCamera"  accept="image/*" capture="environment" onchange="handleFile(this)" />
+    <input type="file" id="fileGallery" accept="image/*" onchange="handleFile(this)" />
+
+    <!-- Two photo source buttons -->
+    <div class="photo-btns" id="photoBtns">
+      <button class="photo-btn" onclick="document.getElementById('fileCamera').click()">
+        <span class="pb-icon">📷</span>Take Photo
+      </button>
+      <button class="photo-btn" onclick="document.getElementById('fileGallery').click()">
+        <span class="pb-icon">🖼️</span>Choose Photo
+      </button>
     </div>
 
-    <img id="previewImg" alt="Receipt preview" onclick="document.getElementById('fileInput').click()" />
+    <!-- Preview + action buttons -->
+    <div id="previewWrap">
+      <img id="previewImg" alt="Receipt preview" />
+      <div class="preview-actions">
+        <button onclick="startCrop()">✂ Crop</button>
+        <button onclick="document.getElementById('fileCamera').click()">📷 Retake</button>
+        <button onclick="document.getElementById('fileGallery').click()">🖼 Replace</button>
+      </div>
+    </div>
 
-    <button class="btn-gold" id="btnExtract" style="display:none" onclick="extractWithAI()">✦ Extract with AI</button>
+    <!-- Crop tool -->
+    <div id="cropWrap">
+      <canvas id="cropCanvas"></canvas>
+      <div class="crop-hint">Drag to select crop area</div>
+      <div class="crop-actions">
+        <button class="btn-crop-ok"     onclick="applyCrop()">✓ Apply Crop</button>
+        <button class="btn-crop-cancel" onclick="cancelCrop()">Cancel</button>
+      </div>
+    </div>
 
-    <div class="ai-badge" id="aiBadge"><span class="ai-dot"></span> AI extracted — review below</div>
+    <div style="margin-top:12px">
+      <button class="btn-gold" id="btnExtract" style="display:none" onclick="extractWithAI()">✦ Extract with AI</button>
+      <div class="ai-badge" id="aiBadge"><span class="ai-dot"></span> AI extracted — review below</div>
+    </div>
 
     <hr class="divider" />
 
@@ -461,7 +208,6 @@
       <label>Vendor / Store</label>
       <input type="text" id="fVendor" placeholder="e.g. Home Depot" />
     </div>
-
     <div class="row-fields">
       <div class="field">
         <label>Amount</label>
@@ -475,21 +221,18 @@
         <input type="date" id="fDate" />
       </div>
     </div>
-
     <div class="field">
       <label>Property</label>
       <select id="fProperty" onchange="onPropertyChange()">
         <option value="">— Select property —</option>
       </select>
     </div>
-
     <div class="field">
       <label>Category</label>
       <select id="fCategory" disabled>
         <option value="">— Select category —</option>
       </select>
     </div>
-
     <div class="field">
       <label>Description (optional)</label>
       <textarea id="fDesc" placeholder="Notes about this expense..."></textarea>
@@ -499,48 +242,53 @@
     <button class="btn-ghost" id="btnClear" style="display:none" onclick="resetForm()">Clear & start over</button>
   </div>
 
-  <!-- RECEIPTS TAB -->
+  <!-- ── RECEIPTS TAB ── -->
   <div class="section" id="sec-receipts">
     <div id="summaryBar" style="display:none">
       <div class="summary-bar">
-        <div>
-          <div class="stat-label">Total Expenses</div>
-          <div class="stat-val" id="statTotal">$0.00</div>
-        </div>
-        <div>
-          <div class="stat-label">Receipts</div>
-          <div class="stat-val" id="statCount">0</div>
-        </div>
+        <div><div class="stat-label">Total Expenses</div><div class="stat-val" id="statTotal">$0.00</div></div>
+        <div><div class="stat-label">Receipts</div><div class="stat-val" id="statCount">0</div></div>
       </div>
-      <button class="btn-gold" id="btnExport" onclick="exportToExcel()" style="margin-bottom:14px">↓ Export to Excel (.xlsx)</button>
+      <div class="export-row">
+        <button class="btn-gold" onclick="exportToExcel()">↓ Download Excel</button>
+        <button class="btn-gold" onclick="shareExcel()">✉ Email / Share</button>
+      </div>
       <div class="filter-row" id="filterCats"></div>
       <div class="filter-row" id="filterProps"></div>
     </div>
-
     <div id="receiptList"></div>
-
     <div class="empty-state" id="emptyState">
       <div class="ei">🧾</div>
       <div class="et">No receipts yet — capture one first</div>
     </div>
   </div>
+
 </div>
 
-<!-- IMAGE VIEWER OVERLAY -->
+<!-- CONFIRM DELETE MODAL -->
+<div id="confirmModal">
+  <div class="confirm-box">
+    <div class="confirm-title">Delete Receipt?</div>
+    <div class="confirm-msg" id="confirmMsg"></div>
+    <div class="confirm-btns">
+      <button class="btn-cc" onclick="closeConfirm()">Cancel</button>
+      <button class="btn-cd" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- FULL IMAGE VIEWER -->
 <div id="imgViewer">
-  <button id="imgViewer-close" onclick="closeViewer()">✕</button>
+  <button id="ivClose" onclick="closeViewer()">✕</button>
   <img id="viewerImg" src="" alt="Receipt" />
 </div>
 
-<!-- TOAST -->
 <div id="toast"></div>
 
-<!-- SheetJS for Excel export -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
 <script>
-// ─── DATA ───────────────────────────────────────────────
-const ALL_CODES = [
+/* ── DATA ─────────────────────────────────────────── */
+const ALL_CODES=[
   {p:"14 FC",c:"HOA"},{p:"14 FC",c:"Insurance"},{p:"14 FC",c:"Material"},
   {p:"14 FC",c:"Misc."},{p:"14 FC",c:"Pest Control"},{p:"14 FC",c:"Property Tax"},
   {p:"14 FC",c:"Rental Income"},{p:"14 FC",c:"Utilities"},
@@ -567,406 +315,324 @@ const ALL_CODES = [
   {p:"990 OCR",c:"Repair"},{p:"990 OCR",c:"Security Deposit"},{p:"990 OCR",c:"Utilities"},
   {p:"BSL Homes",c:"Insurance"},{p:"BSL Homes",c:"Misc."}
 ];
+const PROPERTIES=[...new Set(ALL_CODES.map(x=>x.p))];
 
-const PROPERTIES = [...new Set(ALL_CODES.map(x => x.p))];
+/* ── STATE ────────────────────────────────────────── */
+let receipts=[], currentImgData=null, filterCat='ALL', filterProp='ALL';
+let toastTimer=null, pendingDeleteId=null;
+let cropImg=null, cropOrigData=null, cropCtx=null, cropCanvas=null;
+let cropStart=null, cropRect=null, isCropping=false;
 
-// ─── STATE ──────────────────────────────────────────────
-let receipts = [];
-let currentImgData = null;
-let currentTab = 'capture';
-let filterCat = 'ALL';
-let filterProp = 'ALL';
-let toastTimer = null;
-let aiDone = false;
-
-// ─── INIT ───────────────────────────────────────────────
-function init() {
-  // Load saved receipts
-  try {
-    const saved = localStorage.getItem('receiptLedger_v1');
-    if (saved) receipts = JSON.parse(saved);
-  } catch(e) { receipts = []; }
-
-  // Set today's date
-  document.getElementById('fDate').value = new Date().toISOString().split('T')[0];
-
-  // Populate property dropdown
-  const propSel = document.getElementById('fProperty');
-  PROPERTIES.forEach(p => {
-    const o = document.createElement('option');
-    o.value = p; o.textContent = p;
-    propSel.appendChild(o);
-  });
-
-  // Update tab label
-  updateTabLabel();
-  renderReceipts();
-  registerServiceWorker();
-  handleOnlineStatus();
+/* ── INIT ─────────────────────────────────────────── */
+function init(){
+  try{const s=localStorage.getItem('receiptLedger_v1');if(s)receipts=JSON.parse(s);}catch(e){}
+  document.getElementById('fDate').value=new Date().toISOString().split('T')[0];
+  const ps=document.getElementById('fProperty');
+  PROPERTIES.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;ps.appendChild(o);});
+  updateTabLabel(); renderReceipts(); registerSW();
+  const ob=document.getElementById('offlineBadge');
+  window.addEventListener('online', ()=>ob.classList.toggle('show',!navigator.onLine));
+  window.addEventListener('offline',()=>ob.classList.add('show'));
+  ob.classList.toggle('show',!navigator.onLine);
 }
 
-// ─── OFFLINE ────────────────────────────────────────────
-function handleOnlineStatus() {
-  const badge = document.getElementById('offlineBadge');
-  function update() {
-    badge.classList.toggle('show', !navigator.onLine);
-  }
-  update();
-  window.addEventListener('online', update);
-  window.addEventListener('offline', update);
+/* ── SERVICE WORKER ───────────────────────────────── */
+function registerSW(){
+  if(!('serviceWorker' in navigator))return;
+  const sw=`const C='rl-v2';
+self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(['./','./index.html'])));self.skipWaiting();});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==C).map(k=>caches.delete(k)))));self.clients.claim();});
+self.addEventListener('fetch',e=>{
+  if(e.request.method!=='GET')return;
+  const u=new URL(e.request.url);
+  if(u.hostname==='api.anthropic.com')return;
+  e.respondWith(caches.match(e.request).then(r=>{
+    if(r)return r;
+    return fetch(e.request).then(nr=>{if(nr.ok){const cl=nr.clone();caches.open(C).then(c=>c.put(e.request,cl));}return nr;}).catch(()=>caches.match('./index.html'));
+  }));
+});`;
+  navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw],{type:'application/javascript'}))).catch(()=>{});
 }
 
-// ─── SERVICE WORKER ─────────────────────────────────────
-function registerServiceWorker() {
-  if (!('serviceWorker' in navigator)) return;
-  // Inline SW as blob
-  const swCode = `
-const CACHE = 'receipt-ledger-v1';
-const ASSETS = ['./', './index.html'];
-self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
-  self.skipWaiting();
-});
-self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(keys =>
-    Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-  ));
-  self.clients.claim();
-});
-self.addEventListener('fetch', e => {
-  if (e.request.method !== 'GET') return;
-  const url = new URL(e.request.url);
-  // For API calls, go network-only
-  if (url.hostname === 'api.anthropic.com') return;
-  // For Google Fonts, try network then cache
-  if (url.hostname.includes('fonts')) {
-    e.respondWith(
-      fetch(e.request).then(r => {
-        const clone = r.clone();
-        caches.open(CACHE).then(c => c.put(e.request, clone));
-        return r;
-      }).catch(() => caches.match(e.request))
-    );
-    return;
-  }
-  // For SheetJS CDN, cache it
-  if (url.hostname.includes('cdnjs')) {
-    e.respondWith(
-      caches.match(e.request).then(cached => {
-        if (cached) return cached;
-        return fetch(e.request).then(r => {
-          const clone = r.clone();
-          caches.open(CACHE).then(c => c.put(e.request, clone));
-          return r;
-        });
-      })
-    );
-    return;
-  }
-  // Default: cache-first
-  e.respondWith(
-    caches.match(e.request).then(cached => cached || fetch(e.request))
-  );
-});
-  `;
-  const blob = new Blob([swCode], {type: 'application/javascript'});
-  const swURL = URL.createObjectURL(blob);
-  navigator.serviceWorker.register(swURL).catch(() => {});
+/* ── PERSISTENCE ──────────────────────────────────── */
+function save(){
+  try{localStorage.setItem('receiptLedger_v1',JSON.stringify(receipts));}
+  catch(e){showToast('Storage full — export to free space');}
 }
 
-// ─── PERSISTENCE ────────────────────────────────────────
-function save() {
-  try {
-    localStorage.setItem('receiptLedger_v1', JSON.stringify(receipts));
-  } catch(e) { showToast('Storage full — export & clear some receipts'); }
+/* ── TABS ─────────────────────────────────────────── */
+function showTab(tab){
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',(i===0&&tab==='capture')||(i===1&&tab==='receipts')));
+  document.getElementById('sec-capture').classList.toggle('active',tab==='capture');
+  document.getElementById('sec-receipts').classList.toggle('active',tab==='receipts');
+  if(tab==='receipts')renderReceipts();
+}
+function updateTabLabel(){
+  document.getElementById('tab-receipts').textContent=receipts.length>0?`Receipts (${receipts.length})`:'Receipts';
 }
 
-// ─── TABS ───────────────────────────────────────────────
-function showTab(tab) {
-  currentTab = tab;
-  document.querySelectorAll('.tab').forEach((t,i) => {
-    t.classList.toggle('active', (i===0 && tab==='capture') || (i===1 && tab==='receipts'));
-  });
-  document.getElementById('sec-capture').classList.toggle('active', tab==='capture');
-  document.getElementById('sec-receipts').classList.toggle('active', tab==='receipts');
-  if (tab === 'receipts') renderReceipts();
-}
-
-function updateTabLabel() {
-  document.getElementById('tab-receipts').textContent =
-    receipts.length > 0 ? `Receipts (${receipts.length})` : 'Receipts';
-}
-
-// ─── FILE HANDLING ──────────────────────────────────────
-function handleFileInput(input) {
-  const file = input.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    currentImgData = e.target.result;
-    aiDone = false;
-    document.getElementById('previewImg').src = currentImgData;
-    document.getElementById('previewImg').style.display = 'block';
-    document.getElementById('uploadZone').style.display = 'none';
-    document.getElementById('btnExtract').style.display = 'block';
-    document.getElementById('aiBadge').classList.remove('show');
-    document.getElementById('btnClear').style.display = 'block';
-  };
+/* ── FILE HANDLING ────────────────────────────────── */
+function handleFile(input){
+  const file=input.files[0]; if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{currentImgData=e.target.result;showPreview(currentImgData);};
   reader.readAsDataURL(file);
-  input.value = '';
+  input.value='';
 }
-
-// ─── AI EXTRACTION ──────────────────────────────────────
-async function extractWithAI() {
-  if (!currentImgData) return;
-  const btn = document.getElementById('btnExtract');
-  btn.disabled = true;
-  btn.textContent = 'Reading receipt...';
-  btn.classList.add('loading');
-
-  try {
-    const base64 = currentImgData.split(',')[1];
-    const mediaType = currentImgData.split(';')[0].split(':')[1];
-
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 500,
-        messages: [{
-          role: 'user',
-          content: [
-            {type:'image', source:{type:'base64', media_type: mediaType, data: base64}},
-            {type:'text', text:'Extract receipt details. Return ONLY valid JSON: {"vendor":"store name","amount":"numeric only no $ sign","date":"YYYY-MM-DD or empty"}. No markdown, no explanation.'}
-          ]
-        }]
-      })
-    });
-
-    const data = await res.json();
-    const text = (data.content||[]).map(b=>b.text||'').join('');
-    const clean = text.replace(/```json|```/g,'').trim();
-    const parsed = JSON.parse(clean);
-
-    if (parsed.vendor) document.getElementById('fVendor').value = parsed.vendor;
-    if (parsed.amount) document.getElementById('fAmount').value = parsed.amount;
-    if (parsed.date)   document.getElementById('fDate').value   = parsed.date;
-
-    btn.style.display = 'none';
-    document.getElementById('aiBadge').classList.add('show');
-    aiDone = true;
-  } catch(e) {
-    showToast('Could not read receipt — fill in manually');
-    btn.disabled = false;
-    btn.textContent = '✦ Extract with AI';
-    btn.classList.remove('loading');
-  }
-}
-
-// ─── PROPERTY / CATEGORY DROPDOWNS ──────────────────────
-function onPropertyChange() {
-  const prop = document.getElementById('fProperty').value;
-  const catSel = document.getElementById('fCategory');
-  catSel.innerHTML = '<option value="">— Select category —</option>';
-  catSel.disabled = !prop;
-  if (!prop) return;
-  ALL_CODES.filter(x => x.p === prop).forEach(x => {
-    const o = document.createElement('option');
-    o.value = x.c; o.textContent = x.c;
-    catSel.appendChild(o);
-  });
-}
-
-// ─── SAVE / RESET ────────────────────────────────────────
-function saveReceipt() {
-  const vendor = document.getElementById('fVendor').value.trim();
-  const amount = document.getElementById('fAmount').value.trim();
-  const date   = document.getElementById('fDate').value;
-  const prop   = document.getElementById('fProperty').value;
-  const cat    = document.getElementById('fCategory').value;
-  const desc   = document.getElementById('fDesc').value.trim();
-
-  if (!vendor || !amount || !prop || !cat) {
-    showToast('Fill in vendor, amount, property & category');
-    return;
-  }
-
-  receipts.unshift({
-    id: Date.now(),
-    vendor, amount, date, propCode: prop, taxCode: cat, description: desc,
-    imgData: currentImgData,
-    savedAt: new Date().toLocaleString()
-  });
-
-  save();
-  updateTabLabel();
-  showToast('Receipt saved ✓');
-  resetForm();
-  showTab('receipts');
-}
-
-function resetForm() {
-  currentImgData = null;
-  aiDone = false;
-  document.getElementById('fVendor').value = '';
-  document.getElementById('fAmount').value = '';
-  document.getElementById('fDate').value = new Date().toISOString().split('T')[0];
-  document.getElementById('fProperty').value = '';
-  document.getElementById('fCategory').innerHTML = '<option value="">— Select category —</option>';
-  document.getElementById('fCategory').disabled = true;
-  document.getElementById('fDesc').value = '';
-  document.getElementById('previewImg').style.display = 'none';
-  document.getElementById('previewImg').src = '';
-  document.getElementById('uploadZone').style.display = 'block';
-  document.getElementById('btnExtract').style.display = 'none';
-  document.getElementById('btnExtract').disabled = false;
-  document.getElementById('btnExtract').textContent = '✦ Extract with AI';
-  document.getElementById('btnExtract').classList.remove('loading');
+function showPreview(dataUrl){
+  document.getElementById('previewImg').src=dataUrl;
+  document.getElementById('previewWrap').style.display='block';
+  document.getElementById('photoBtns').style.display='none';
+  document.getElementById('cropWrap').style.display='none';
+  document.getElementById('btnExtract').style.display='block';
   document.getElementById('aiBadge').classList.remove('show');
-  document.getElementById('btnClear').style.display = 'none';
+  document.getElementById('btnClear').style.display='block';
 }
 
-function deleteReceipt(id) {
-  receipts = receipts.filter(r => r.id !== id);
-  save();
-  updateTabLabel();
-  renderReceipts();
+/* ── CROP ─────────────────────────────────────────── */
+function startCrop(){
+  cropCanvas=document.getElementById('cropCanvas');
+  cropCtx=cropCanvas.getContext('2d');
+  cropImg=new Image(); cropOrigData=currentImgData;
+  cropImg.onload=()=>{
+    const maxW=Math.min(cropImg.width, document.getElementById('app').offsetWidth-48);
+    const scale=maxW/cropImg.width;
+    cropCanvas.width=cropImg.width*scale; cropCanvas.height=cropImg.height*scale;
+    cropRect=null; drawCrop();
+    document.getElementById('previewWrap').style.display='none';
+    document.getElementById('cropWrap').style.display='block';
+    bindCropEvents();
+  };
+  cropImg.src=currentImgData;
 }
-
-// ─── RENDER RECEIPTS ─────────────────────────────────────
-function renderReceipts() {
-  const filtered = receipts.filter(r =>
-    (filterCat  === 'ALL' || r.taxCode  === filterCat) &&
-    (filterProp === 'ALL' || r.propCode === filterProp)
-  );
-
-  const total = filtered.reduce((s,r) => s + parseFloat(r.amount||0), 0);
-
-  const hasSome = receipts.length > 0;
-  document.getElementById('summaryBar').style.display = hasSome ? 'block' : 'none';
-  document.getElementById('emptyState').style.display = filtered.length === 0 ? 'block' : 'none';
-
-  if (hasSome) {
-    document.getElementById('statTotal').textContent = '$' + total.toFixed(2);
-    document.getElementById('statCount').textContent = filtered.length;
-
-    // Filter chips — categories
-    const usedCats = [...new Set(receipts.map(r=>r.taxCode))];
-    const fcEl = document.getElementById('filterCats');
-    fcEl.innerHTML = '';
-    addChip(fcEl, 'All Categories', filterCat==='ALL', () => { filterCat='ALL'; renderReceipts(); });
-    usedCats.forEach(c => addChip(fcEl, c, filterCat===c, () => { filterCat=c; renderReceipts(); }));
-
-    // Filter chips — properties
-    const usedProps = [...new Set(receipts.map(r=>r.propCode))];
-    const fpEl = document.getElementById('filterProps');
-    fpEl.innerHTML = '';
-    addChip(fpEl, 'All Properties', filterProp==='ALL', () => { filterProp='ALL'; renderReceipts(); });
-    usedProps.forEach(p => addChip(fpEl, p, filterProp===p, () => { filterProp=p; renderReceipts(); }));
+function drawCrop(){
+  cropCtx.clearRect(0,0,cropCanvas.width,cropCanvas.height);
+  cropCtx.drawImage(cropImg,0,0,cropCanvas.width,cropCanvas.height);
+  if(cropRect&&cropRect.w>2&&cropRect.h>2){
+    cropCtx.fillStyle='rgba(0,0,0,0.48)';
+    cropCtx.fillRect(0,0,cropCanvas.width,cropCanvas.height);
+    const sx=cropRect.x*(cropImg.width/cropCanvas.width), sy=cropRect.y*(cropImg.height/cropCanvas.height);
+    const sw=cropRect.w*(cropImg.width/cropCanvas.width),  sh=cropRect.h*(cropImg.height/cropCanvas.height);
+    cropCtx.drawImage(cropImg,sx,sy,sw,sh,cropRect.x,cropRect.y,cropRect.w,cropRect.h);
+    cropCtx.strokeStyle='#c8a96e'; cropCtx.lineWidth=2;
+    cropCtx.strokeRect(cropRect.x,cropRect.y,cropRect.w,cropRect.h);
   }
+}
+function getPos(e){
+  const r=cropCanvas.getBoundingClientRect();
+  const s=e.touches?e.touches[0]:e;
+  return{x:s.clientX-r.left, y:s.clientY-r.top};
+}
+function bindCropEvents(){
+  cropCanvas.onmousedown=cropCanvas.ontouchstart=e=>{e.preventDefault();cropStart=getPos(e);cropRect=null;isCropping=true;};
+  cropCanvas.onmousemove=cropCanvas.ontouchmove=e=>{
+    if(!isCropping)return; e.preventDefault();
+    const p=getPos(e);
+    cropRect={x:Math.min(cropStart.x,p.x),y:Math.min(cropStart.y,p.y),w:Math.abs(p.x-cropStart.x),h:Math.abs(p.y-cropStart.y)};
+    drawCrop();
+  };
+  cropCanvas.onmouseup=cropCanvas.ontouchend=()=>{isCropping=false;};
+}
+function applyCrop(){
+  if(!cropRect||cropRect.w<10||cropRect.h<10){showToast('Draw a crop area first');return;}
+  const scaleX=cropImg.width/cropCanvas.width, scaleY=cropImg.height/cropCanvas.height;
+  const off=document.createElement('canvas');
+  off.width=cropRect.w*scaleX; off.height=cropRect.h*scaleY;
+  off.getContext('2d').drawImage(cropImg,cropRect.x*scaleX,cropRect.y*scaleY,off.width,off.height,0,0,off.width,off.height);
+  currentImgData=off.toDataURL('image/jpeg',0.92);
+  cropRect=null; cropImg=null;
+  showPreview(currentImgData); showToast('Crop applied ✓');
+}
+function cancelCrop(){
+  cropRect=null; currentImgData=cropOrigData;
+  showPreview(currentImgData);
+}
 
-  // Receipt cards
-  const list = document.getElementById('receiptList');
-  list.innerHTML = '';
-  filtered.forEach(r => {
-    const card = document.createElement('div');
-    card.className = 'receipt-card';
+/* ── AI EXTRACT ───────────────────────────────────── */
+async function extractWithAI(){
+  if(!currentImgData)return;
+  const btn=document.getElementById('btnExtract');
+  btn.disabled=true; btn.textContent='Reading receipt...'; btn.classList.add('loading');
+  try{
+    const base64=currentImgData.split(',')[1];
+    const mediaType=currentImgData.split(';')[0].split(':')[1];
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,
+        messages:[{role:'user',content:[
+          {type:'image',source:{type:'base64',media_type:mediaType,data:base64}},
+          {type:'text',text:'Extract receipt details. Return ONLY valid JSON: {"vendor":"store name","amount":"numeric only no $ sign","date":"YYYY-MM-DD or empty"}. No markdown, no explanation.'}
+        ]}]})
+    });
+    const data=await res.json();
+    const text=(data.content||[]).map(b=>b.text||'').join('');
+    const parsed=JSON.parse(text.replace(/```json|```/g,'').trim());
+    if(parsed.vendor)document.getElementById('fVendor').value=parsed.vendor;
+    if(parsed.amount)document.getElementById('fAmount').value=parsed.amount;
+    if(parsed.date)  document.getElementById('fDate').value=parsed.date;
+    btn.style.display='none';
+    document.getElementById('aiBadge').classList.add('show');
+  }catch(e){
+    showToast('Could not read receipt — fill in manually');
+    btn.disabled=false; btn.textContent='✦ Extract with AI'; btn.classList.remove('loading');
+  }
+}
 
-    const thumb = r.imgData
-      ? `<img class="receipt-thumb" src="${r.imgData}" alt="" onclick="openViewer('${r.id}')" />`
-      : `<div class="receipt-no-thumb">🧾</div>`;
+/* ── DROPDOWNS ────────────────────────────────────── */
+function onPropertyChange(){
+  const prop=document.getElementById('fProperty').value;
+  const sel=document.getElementById('fCategory');
+  sel.innerHTML='<option value="">— Select category —</option>';
+  sel.disabled=!prop; if(!prop)return;
+  ALL_CODES.filter(x=>x.p===prop).forEach(x=>{
+    const o=document.createElement('option');o.value=x.c;o.textContent=x.c;sel.appendChild(o);
+  });
+}
 
-    card.innerHTML = `
-      ${thumb}
+/* ── SAVE / RESET ─────────────────────────────────── */
+function saveReceipt(){
+  const vendor=document.getElementById('fVendor').value.trim();
+  const amount=document.getElementById('fAmount').value.trim();
+  const date  =document.getElementById('fDate').value;
+  const prop  =document.getElementById('fProperty').value;
+  const cat   =document.getElementById('fCategory').value;
+  const desc  =document.getElementById('fDesc').value.trim();
+  if(!vendor||!amount||!prop||!cat){showToast('Fill in vendor, amount, property & category');return;}
+  receipts.unshift({id:Date.now(),vendor,amount,date,propCode:prop,taxCode:cat,description:desc,imgData:currentImgData,savedAt:new Date().toLocaleString()});
+  save(); updateTabLabel(); showToast('Receipt saved ✓'); resetForm(); showTab('receipts');
+}
+function resetForm(){
+  currentImgData=null; cropRect=null;
+  ['fVendor','fAmount','fDesc'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fDate').value=new Date().toISOString().split('T')[0];
+  document.getElementById('fProperty').value='';
+  document.getElementById('fCategory').innerHTML='<option value="">— Select category —</option>';
+  document.getElementById('fCategory').disabled=true;
+  document.getElementById('previewWrap').style.display='none';
+  document.getElementById('previewImg').src='';
+  document.getElementById('cropWrap').style.display='none';
+  document.getElementById('photoBtns').style.display='flex';
+  const btn=document.getElementById('btnExtract');
+  btn.style.display='none'; btn.disabled=false; btn.textContent='✦ Extract with AI'; btn.classList.remove('loading');
+  document.getElementById('aiBadge').classList.remove('show');
+  document.getElementById('btnClear').style.display='none';
+}
+
+/* ── DELETE WITH CONFIRM ──────────────────────────── */
+function askDelete(id){
+  pendingDeleteId=id;
+  const r=receipts.find(x=>x.id===id);
+  document.getElementById('confirmMsg').textContent=r?`"${r.vendor}" — $${parseFloat(r.amount).toFixed(2)} on ${r.date}`:'This receipt will be permanently removed.';
+  document.getElementById('confirmModal').classList.add('show');
+}
+function closeConfirm(){pendingDeleteId=null;document.getElementById('confirmModal').classList.remove('show');}
+function confirmDelete(){
+  if(!pendingDeleteId)return;
+  receipts=receipts.filter(r=>r.id!==pendingDeleteId);
+  save(); updateTabLabel(); renderReceipts(); closeConfirm(); showToast('Receipt deleted');
+}
+
+/* ── RENDER ───────────────────────────────────────── */
+function renderReceipts(){
+  const filtered=receipts.filter(r=>(filterCat==='ALL'||r.taxCode===filterCat)&&(filterProp==='ALL'||r.propCode===filterProp));
+  const total=filtered.reduce((s,r)=>s+parseFloat(r.amount||0),0);
+  const hasSome=receipts.length>0;
+  document.getElementById('summaryBar').style.display=hasSome?'block':'none';
+  document.getElementById('emptyState').style.display=filtered.length===0?'block':'none';
+  if(hasSome){
+    document.getElementById('statTotal').textContent='$'+total.toFixed(2);
+    document.getElementById('statCount').textContent=filtered.length;
+    const uc=[...new Set(receipts.map(r=>r.taxCode))];
+    const fc=document.getElementById('filterCats'); fc.innerHTML='';
+    addChip(fc,'All Categories',filterCat==='ALL',()=>{filterCat='ALL';renderReceipts();});
+    uc.forEach(c=>addChip(fc,c,filterCat===c,()=>{filterCat=c;renderReceipts();}));
+    const up=[...new Set(receipts.map(r=>r.propCode))];
+    const fp=document.getElementById('filterProps'); fp.innerHTML='';
+    addChip(fp,'All Properties',filterProp==='ALL',()=>{filterProp='ALL';renderReceipts();});
+    up.forEach(p=>addChip(fp,p,filterProp===p,()=>{filterProp=p;renderReceipts();}));
+  }
+  const list=document.getElementById('receiptList'); list.innerHTML='';
+  filtered.forEach(r=>{
+    const card=document.createElement('div'); card.className='receipt-card';
+    const thumb=r.imgData
+      ?`<img class="receipt-thumb" src="${r.imgData}" alt="" onclick="openViewer(${r.id})" />`
+      :`<div class="receipt-no-thumb">🧾</div>`;
+    card.innerHTML=`${thumb}
       <div class="receipt-info">
-        <div class="receipt-vendor">${escHtml(r.vendor)}</div>
-        <div class="receipt-meta">${r.date} · ${escHtml(r.propCode)}:${escHtml(r.taxCode)}</div>
-        <div class="receipt-tags">
-          <span class="tag tag-prop">${escHtml(r.propCode)}</span>
-          <span class="tag tag-cat">${escHtml(r.taxCode)}</span>
-        </div>
-        ${r.description ? `<div class="receipt-note">${escHtml(r.description)}</div>` : ''}
+        <div class="receipt-vendor">${esc(r.vendor)}</div>
+        <div class="receipt-meta">${r.date} · ${esc(r.propCode)}:${esc(r.taxCode)}</div>
+        <div class="receipt-tags"><span class="tag tag-prop">${esc(r.propCode)}</span><span class="tag tag-cat">${esc(r.taxCode)}</span></div>
+        ${r.description?`<div class="receipt-note">${esc(r.description)}</div>`:''}
       </div>
-      <div class="receipt-amount">$${parseFloat(r.amount).toFixed(2)}</div>
-      <button class="receipt-delete" onclick="deleteReceipt(${r.id})">✕</button>
-    `;
+      <div class="receipt-right">
+        <div class="receipt-amount">$${parseFloat(r.amount).toFixed(2)}</div>
+        <button class="btn-delete" onclick="askDelete(${r.id})">🗑 Delete</button>
+      </div>`;
     list.appendChild(card);
   });
 }
+function addChip(p,l,a,fn){const b=document.createElement('button');b.className='chip'+(a?' active':'');b.textContent=l;b.onclick=fn;p.appendChild(b);}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
-function addChip(parent, label, active, onClick) {
-  const btn = document.createElement('button');
-  btn.className = 'chip' + (active ? ' active' : '');
-  btn.textContent = label;
-  btn.onclick = onClick;
-  parent.appendChild(btn);
+/* ── IMAGE VIEWER ─────────────────────────────────── */
+function openViewer(id){const r=receipts.find(x=>x.id===id);if(!r||!r.imgData)return;document.getElementById('viewerImg').src=r.imgData;document.getElementById('imgViewer').classList.add('show');}
+function closeViewer(){document.getElementById('imgViewer').classList.remove('show');}
+
+/* ── EXCEL EXPORT ─────────────────────────────────── */
+function buildWB(){
+  const rows=receipts.map(r=>({'Date':r.date,'Vendor':r.vendor,'Amount ($)':parseFloat(r.amount)||0,'Property':r.propCode,'Category':r.taxCode,'Full Code':r.propCode+':'+r.taxCode,'Description':r.description||'','Saved At':r.savedAt}));
+  const totals={};
+  receipts.forEach(r=>{const k=r.propCode+':'+r.taxCode;totals[k]=(totals[k]||0)+(parseFloat(r.amount)||0);});
+  const srows=Object.entries(totals).map(([c,t])=>({'Full Code':c,'Total ($)':parseFloat(t.toFixed(2))}));
+  const wb=XLSX.utils.book_new();
+  const ws1=XLSX.utils.json_to_sheet(rows);ws1['!cols']=[{wch:12},{wch:24},{wch:12},{wch:14},{wch:18},{wch:22},{wch:32},{wch:20}];
+  XLSX.utils.book_append_sheet(wb,ws1,'Receipts');
+  const ws2=XLSX.utils.json_to_sheet(srows);ws2['!cols']=[{wch:28},{wch:14}];
+  XLSX.utils.book_append_sheet(wb,ws2,'Summary by Code');
+  return wb;
 }
-
-function escHtml(str) {
-  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-// ─── IMAGE VIEWER ────────────────────────────────────────
-function openViewer(id) {
-  const r = receipts.find(x => x.id == id);
-  if (!r || !r.imgData) return;
-  document.getElementById('viewerImg').src = r.imgData;
-  document.getElementById('imgViewer').classList.add('show');
-}
-function closeViewer() {
-  document.getElementById('imgViewer').classList.remove('show');
-}
-
-// ─── EXCEL EXPORT ────────────────────────────────────────
-function exportToExcel() {
-  if (!window.XLSX) { showToast('Export library not loaded yet'); return; }
-  if (receipts.length === 0) { showToast('No receipts to export'); return; }
-
-  const rows = receipts.map(r => ({
-    'Date':          r.date,
-    'Vendor':        r.vendor,
-    'Amount ($)':    parseFloat(r.amount) || 0,
-    'Property':      r.propCode,
-    'Category':      r.taxCode,
-    'Full Code':     r.propCode + ':' + r.taxCode,
-    'Description':   r.description || '',
-    'Saved At':      r.savedAt
-  }));
-
-  const totals = {};
-  receipts.forEach(r => {
-    const k = r.propCode + ':' + r.taxCode;
-    totals[k] = (totals[k]||0) + (parseFloat(r.amount)||0);
-  });
-  const summaryRows = Object.entries(totals).map(([code, total]) => ({
-    'Full Code': code,
-    'Total ($)': parseFloat(total.toFixed(2))
-  }));
-
-  const wb = XLSX.utils.book_new();
-  const ws1 = XLSX.utils.json_to_sheet(rows);
-  ws1['!cols'] = [{wch:12},{wch:24},{wch:12},{wch:14},{wch:18},{wch:22},{wch:32},{wch:20}];
-  XLSX.utils.book_append_sheet(wb, ws1, 'Receipts');
-
-  const ws2 = XLSX.utils.json_to_sheet(summaryRows);
-  ws2['!cols'] = [{wch:28},{wch:14}];
-  XLSX.utils.book_append_sheet(wb, ws2, 'Summary by Code');
-
-  XLSX.writeFile(wb, `property-receipts-${new Date().getFullYear()}.xlsx`);
+function exportToExcel(){
+  if(!window.XLSX){showToast('Library loading — try again');return;}
+  if(!receipts.length){showToast('No receipts to export');return;}
+  XLSX.writeFile(buildWB(),`property-receipts-${new Date().getFullYear()}.xlsx`);
   showToast('Excel file downloaded ✓');
 }
-
-// ─── TOAST ───────────────────────────────────────────────
-function showToast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+function shareExcel(){
+  if(!window.XLSX){showToast('Library loading — try again');return;}
+  if(!receipts.length){showToast('No receipts to export');return;}
+  try{
+    const wb=buildWB();
+    const out=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+    const blob=new Blob([out],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const fname=`property-receipts-${new Date().getFullYear()}.xlsx`;
+    if(navigator.share&&navigator.canShare){
+      const file=new File([blob],fname,{type:blob.type});
+      if(navigator.canShare({files:[file]})){
+        navigator.share({files:[file],title:'Receipt Export',text:'Property management receipts'})
+          .then(()=>showToast('Shared ✓'))
+          .catch(()=>dlAndEmail(blob,fname));
+        return;
+      }
+    }
+    dlAndEmail(blob,fname);
+  }catch(e){showToast('Share failed — use Download instead');}
+}
+function dlAndEmail(blob,fname){
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=fname;a.click();
+  setTimeout(()=>{
+    window.location.href=`mailto:?subject=Property Receipts ${new Date().getFullYear()}&body=File downloaded to your device — attach the file named: ${fname}`;
+    URL.revokeObjectURL(url);
+  },600);
+  showToast('File saved — opening email...');
 }
 
-// ─── START ───────────────────────────────────────────────
+/* ── TOAST ────────────────────────────────────────── */
+function showToast(msg){
+  const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2800);
+}
+
 init();
 </script>
 </body>
