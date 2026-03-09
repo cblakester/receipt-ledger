@@ -151,6 +151,8 @@
   </style>
 </head>
 <body>
+<script src="https://apis.google.com/js/api.js"></script>
+<script src="https://accounts.google.com/gsi/client"></script>
 <div id="app">
 
   <div class="header">
@@ -160,8 +162,9 @@
         <div class="header-sub">Property Management · Tax Tracker</div>
         <div class="offline-badge" id="offlineBadge">● Offline</div>
       </div>
-      <button onclick="openSettings()" style="background:none;border:none;font-size:22px;cursor:pointer;padding:4px;margin-top:4px;color:var(--muted)" title="API Settings">⚙️</button>
+      <button onclick="openSettings()" style="background:none;border:none;font-size:22px;cursor:pointer;padding:4px;margin-top:4px;color:var(--muted)" title="Settings">⚙️</button>
     </div>
+    <div id="driveBadge" style="display:none;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#2a7a3a;background:#edf7ee;border:1px solid #b8deba;border-radius:10px;padding:2px 8px;margin-top:4px;width:fit-content">● Drive Connected</div>
   </div>
 
   <div class="tab-bar">
@@ -295,6 +298,16 @@
     <!-- DIVIDER -->
     <div style="border-top:1px solid var(--border);margin-bottom:16px"></div>
 
+    <!-- GOOGLE DRIVE -->
+    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Google Drive Backup</div>
+    <div style="font-size:10px;color:var(--muted);margin-bottom:10px;line-height:1.5">Receipt photos save automatically to your Google Drive at full resolution for printing and IRS records.</div>
+    <div id="driveStatus" style="font-size:11px;color:var(--muted);margin-bottom:10px"></div>
+    <button id="btnDriveConnect" onclick="connectDrive()" style="width:100%;padding:12px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;border-radius:8px;cursor:pointer;background:#4285f4;color:#fff;border:none;margin-bottom:6px">Connect Google Drive</button>
+    <button id="btnDriveDisconnect" onclick="disconnectDrive()" style="width:100%;padding:10px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;border-radius:8px;cursor:pointer;background:var(--bg);color:var(--muted);border:1px solid var(--border);display:none">Disconnect Drive</button>
+
+    <!-- DIVIDER -->
+    <div style="border-top:1px solid var(--border);margin-bottom:16px;margin-top:4px"></div>
+
     <!-- PROPERTY MANAGEMENT -->
     <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Properties</div>
     <div id="propList" style="margin-bottom:10px"></div>
@@ -348,7 +361,7 @@ function init(){
   document.getElementById('fDate').value=new Date().toISOString().split('T')[0];
   const ps=document.getElementById('fProperty');
   loadProperties().forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;ps.appendChild(o);});
-  updateTabLabel(); renderReceipts(); registerSW();
+  updateTabLabel(); renderReceipts(); registerSW(); initDrive();
   const ob=document.getElementById('offlineBadge');
   window.addEventListener('online', ()=>ob.classList.toggle('show',!navigator.onLine));
   window.addEventListener('offline',()=>ob.classList.add('show'));
@@ -627,6 +640,7 @@ function openSettings(){
     document.getElementById('storageDiag').textContent=ok?`✓ Storage working · ${count} receipts saved · ${size}KB used`:'✗ Storage not working!';
   } catch(e){ document.getElementById('storageDiag').textContent='✗ Storage error: '+e.message; }
   renderPropList();
+  updateDriveUI();
   document.getElementById('settingsModal').classList.add('show');
 }
 function closeSettings(){ document.getElementById('settingsModal').classList.remove('show'); }
@@ -680,12 +694,17 @@ function saveReceipt(){
 
   // Compress image aggressively for storage (thumbnail only)
   if(currentImgData){
-    compressImage(currentImgData, 400, 0.55).then(thumb => {
-      receipts.unshift({id:Date.now(),vendor,amount:finalAmount,date,propCode:prop,taxCode:cat,description:desc,imgData:thumb,savedAt:new Date().toLocaleString()});
+    const fullRes = currentImgData; // keep full res for Drive upload
+    compressImage(currentImgData, 400, 0.55).then(async thumb => {
+      const r = {id:Date.now(),vendor,amount:finalAmount,date,propCode:prop,taxCode:cat,description:desc,imgData:thumb,savedAt:new Date().toLocaleString()};
+      receipts.unshift(r);
       save(); updateTabLabel(); showToast('Receipt saved ✓'); resetForm(); showTab('receipts');
+      // Upload full resolution to Drive silently
+      if(driveToken) uploadToDrive(r, fullRes).then(()=>showToast('Saved & backed up to Drive ✓'));
     });
   } else {
-    receipts.unshift({id:Date.now(),vendor,amount:finalAmount,date,propCode:prop,taxCode:cat,description:desc,imgData:null,savedAt:new Date().toLocaleString()});
+    const r = {id:Date.now(),vendor,amount:finalAmount,date,propCode:prop,taxCode:cat,description:desc,imgData:null,savedAt:new Date().toLocaleString()};
+    receipts.unshift(r);
     save(); updateTabLabel(); showToast('Receipt saved ✓'); resetForm(); showTab('receipts');
   }
 }
@@ -915,63 +934,60 @@ function exportPDF(){
   let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
   <title>Receipt Ledger ${year}</title>
   <style>
-    body{font-family:Arial,sans-serif;font-size:12px;margin:0;padding:0;color:#1a1a1a}
-    .property-section{page-break-after:always;padding:24px}
-    .property-section:last-child{page-break-after:avoid}
-    h1{font-size:18px;margin:0 0 4px}
-    .sub{font-size:11px;color:#666;margin-bottom:16px}
-    table{width:100%;border-collapse:collapse;margin-bottom:16px}
-    th{background:#f0ebe0;text-align:left;padding:6px 8px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;border-bottom:2px solid #c8a96e}
-    td{padding:6px 8px;border-bottom:1px solid #eee;vertical-align:top}
-    tr:nth-child(even) td{background:#fafaf8}
-    .amt{text-align:right;font-weight:bold}
-    .neg{color:#c0513a}
-    .total-row td{font-weight:bold;border-top:2px solid #c8a96e;background:#f0ebe0}
-    .thumb{width:48px;height:48px;object-fit:cover;border-radius:4px;border:1px solid #ddd}
-    .no-thumb{width:48px;height:48px;background:#f0ebe0;border-radius:4px;display:inline-block;text-align:center;line-height:48px;font-size:20px}
-    .print-btn{position:fixed;top:16px;right:16px;padding:10px 20px;background:#c8a96e;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;z-index:999}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,sans-serif;background:#fff;color:#1a1a1a}
+    .page{
+      width:8.5in;min-height:11in;padding:0.5in;
+      display:flex;flex-direction:column;
+      page-break-after:always;
+    }
+    .page:last-child{page-break-after:avoid}
+    .page-header{margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid #c8a96e}
+    .prop-name{font-size:16px;font-weight:bold;color:#1a1a1a}
+    .receipt-meta{font-size:11px;color:#666;margin-top:3px}
+    .receipt-img{
+      flex:1;width:100%;
+      object-fit:contain;
+      border:1px solid #ddd;border-radius:4px;
+    }
+    .no-img{
+      flex:1;display:flex;align-items:center;justify-content:center;
+      border:2px dashed #ddd;border-radius:4px;
+      font-size:48px;color:#ccc;
+    }
+    .print-btn{
+      position:fixed;top:16px;right:16px;padding:12px 24px;
+      background:#c8a96e;color:#fff;border:none;border-radius:6px;
+      font-size:14px;cursor:pointer;z-index:999;box-shadow:0 2px 8px rgba(0,0,0,0.2)
+    }
     @media print{.print-btn{display:none}}
   </style></head><body>
   <button class="print-btn" onclick="window.print()">🖨 Print / Save as PDF</button>`;
 
   Object.entries(byProp).forEach(([prop, recs])=>{
-    const total = recs.reduce((s,r)=>s+(parseFloat(r.amount)||0),0);
-    html += `<div class="property-section">
-      <h1>${prop}</h1>
-      <div class="sub">Receipt Ledger · ${year} · ${recs.length} receipt${recs.length!==1?'s':''}</div>
-      <table>
-        <thead><tr>
-          <th>Photo</th><th>Date</th><th>Payee</th><th>Category</th><th>Comment</th><th style="text-align:right">Amount</th>
-        </tr></thead><tbody>`;
     recs.forEach(r=>{
-      const amt=parseFloat(r.amount)||0;
-      const amtStr=(amt<0?'-':'')+'$'+Math.abs(amt).toFixed(2);
-      const thumb=r.imgData
-        ?`<img class="thumb" src="${r.imgData}" />`
-        :`<span class="no-thumb">🧾</span>`;
-      html+=`<tr>
-        <td>${thumb}</td>
-        <td>${fmtDate(r.date)}</td>
-        <td>${esc(r.vendor)}</td>
-        <td>${esc(r.taxCode)}</td>
-        <td>${esc(r.description||'')}</td>
-        <td class="amt${amt<0?' neg':''}">${amtStr}</td>
-      </tr>`;
+      const amt = parseFloat(r.amount)||0;
+      const amtStr = (amt<0?'-':'')+'$'+Math.abs(amt).toFixed(2);
+      html += `<div class="page">
+        <div class="page-header">
+          <div class="prop-name">${esc(prop)}</div>
+          <div class="receipt-meta">${fmtDate(r.date)} &nbsp;·&nbsp; ${esc(r.vendor)} &nbsp;·&nbsp; ${esc(r.taxCode)} &nbsp;·&nbsp; <strong>${amtStr}</strong>${r.description ? ' &nbsp;·&nbsp; ' + esc(r.description) : ''}</div>
+        </div>
+        ${r.imgData
+          ? `<img class="receipt-img" src="${r.imgData}" />`
+          : `<div class="no-img">🧾</div>`
+        }
+      </div>`;
     });
-    html+=`<tr class="total-row">
-      <td colspan="5">Total</td>
-      <td class="amt${total<0?' neg':''}">${(total<0?'-':'')+'$'+Math.abs(total).toFixed(2)}</td>
-    </tr></tbody></table></div>`;
   });
+
   html += '</body></html>';
 
-  // Open in new window so user can print or Save as PDF
   const win = window.open('', '_blank');
   if(win){
     win.document.write(html);
     win.document.close();
   } else {
-    // Fallback if popup blocked — download as HTML
     const blob = new Blob([html],{type:'text/html'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -981,6 +997,108 @@ function exportPDF(){
     setTimeout(()=>URL.revokeObjectURL(url),1000);
     showToast('Saved — open file in Chrome then print');
   }
+}
+
+/* ── GOOGLE DRIVE ─────────────────────────────────── */
+const GDRIVE_CLIENT_ID = '310323894535-c20dk5pbjdb2fli147havskbr8usrg12.apps.googleusercontent.com';
+const GDRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+let driveToken = null;
+let driveFolderId = null;
+
+function initDrive(){
+  const stored = localStorage.getItem('rl_drive_token');
+  if(stored){
+    driveToken = stored;
+    document.getElementById('driveBadge').style.display = 'block';
+  }
+  const fid = localStorage.getItem('rl_drive_folder');
+  if(fid) driveFolderId = fid;
+}
+
+function connectDrive(){
+  const client = google.accounts.oauth2.initTokenClient({
+    client_id: GDRIVE_CLIENT_ID,
+    scope: GDRIVE_SCOPE,
+    callback: async (resp) => {
+      if(resp.error){ showToast('Drive connection failed: ' + resp.error); return; }
+      driveToken = resp.access_token;
+      localStorage.setItem('rl_drive_token', driveToken);
+      await ensureDriveFolder();
+      document.getElementById('driveBadge').style.display = 'block';
+      updateDriveUI();
+      showToast('Google Drive connected ✓');
+    }
+  });
+  client.requestAccessToken();
+}
+
+function disconnectDrive(){
+  driveToken = null; driveFolderId = null;
+  localStorage.removeItem('rl_drive_token');
+  localStorage.removeItem('rl_drive_folder');
+  document.getElementById('driveBadge').style.display = 'none';
+  updateDriveUI();
+  showToast('Drive disconnected');
+}
+
+function updateDriveUI(){
+  const connected = !!driveToken;
+  document.getElementById('driveStatus').textContent = connected ? '✓ Connected — photos save to Google Drive automatically' : 'Not connected';
+  document.getElementById('driveStatus').style.color = connected ? '#2a7a3a' : 'var(--muted)';
+  document.getElementById('btnDriveConnect').style.display = connected ? 'none' : 'block';
+  document.getElementById('btnDriveDisconnect').style.display = connected ? 'block' : 'none';
+}
+
+async function ensureDriveFolder(){
+  if(driveFolderId) return driveFolderId;
+  // Check if folder already exists
+  const search = await fetch(
+    `https://www.googleapis.com/drive/v3/files?q=name='Receipt Ledger' and mimeType='application/vnd.google-apps.folder' and trashed=false&fields=files(id,name)`,
+    {headers:{Authorization:'Bearer '+driveToken}}
+  );
+  const data = await search.json();
+  if(data.files && data.files.length > 0){
+    driveFolderId = data.files[0].id;
+  } else {
+    // Create folder
+    const create = await fetch('https://www.googleapis.com/drive/v3/files', {
+      method:'POST',
+      headers:{Authorization:'Bearer '+driveToken,'Content-Type':'application/json'},
+      body: JSON.stringify({name:'Receipt Ledger', mimeType:'application/vnd.google-apps.folder'})
+    });
+    const folder = await create.json();
+    driveFolderId = folder.id;
+  }
+  localStorage.setItem('rl_drive_folder', driveFolderId);
+  return driveFolderId;
+}
+
+async function uploadToDrive(receipt, fullResImageData){
+  if(!driveToken || !fullResImageData) return;
+  try{
+    await ensureDriveFolder();
+    const amt = parseFloat(receipt.amount)||0;
+    const amtStr = (amt<0?'RETURN_':'') + Math.abs(amt).toFixed(2);
+    const fname = `${receipt.propCode.replace(/\s/g,'_')}_${receipt.date}_${receipt.taxCode}_${receipt.vendor.replace(/[^a-z0-9]/gi,'_')}_$${amtStr}.jpg`;
+
+    // Convert base64 to blob
+    const base64 = fullResImageData.split(',')[1];
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for(let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
+    const imgBlob = new Blob([bytes],{type:'image/jpeg'});
+
+    // Multipart upload
+    const boundary = '-------receipt_ledger_boundary';
+    const meta = JSON.stringify({name:fname, parents:[driveFolderId]});
+    const body = `--${boundary}\r\nContent-Type: application/json\r\n\r\n${meta}\r\n--${boundary}\r\nContent-Type: image/jpeg\r\nContent-Transfer-Encoding: base64\r\n\r\n${base64}\r\n--${boundary}--`;
+
+    await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+      method:'POST',
+      headers:{Authorization:'Bearer '+driveToken, 'Content-Type':`multipart/related; boundary=${boundary}`},
+      body
+    });
+  } catch(e){ console.warn('Drive upload failed:', e); }
 }
 
 /* ── TOAST ────────────────────────────────────────── */
