@@ -94,8 +94,8 @@
     .stat-label{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
     .stat-val{font-family:'DM Serif Display',serif;font-size:22px;color:var(--gold)}
 
-    .export-row{display:flex;gap:8px;margin-bottom:14px}
-    .export-row .btn-gold{margin-bottom:0;flex:1;font-size:10px;padding:12px 6px}
+    .export-row{display:flex;gap:6px;margin-bottom:14px}
+    .export-row .btn-gold{margin-bottom:0;flex:1;font-size:9px;padding:10px 4px;letter-spacing:1px}
 
     /* FILTER CHIPS */
     .filter-row{display:flex;gap:7px;margin-bottom:10px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
@@ -265,6 +265,7 @@
       <div class="export-row">
         <button class="btn-gold" onclick="exportToExcel()">↓ Excel</button>
         <button class="btn-gold" onclick="exportCSV()">↓ CSV</button>
+        <button class="btn-gold" onclick="exportPDF()">↓ PDF</button>
         <button class="btn-gold" onclick="shareExcel()">✉ Share</button>
       </div>
       <div class="filter-row" id="filterCats"></div>
@@ -280,18 +281,31 @@
 </div>
 
 <!-- SETTINGS MODAL -->
-<div id="settingsModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:150;align-items:center;justify-content:center;padding:24px" class="modal-wrap">
-  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:28px 24px;width:100%;max-width:360px">
-    <div style="font-family:'DM Serif Display',serif;font-size:20px;margin-bottom:8px;color:var(--text)">API Key Setup</div>
-    <div style="font-size:11px;color:var(--muted);margin-bottom:6px;line-height:1.6">Your Anthropic API key is stored privately on this device only — never uploaded anywhere.</div>
-    <div style="font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.6">Get your key at <strong>console.anthropic.com</strong> → API Keys → Create Key.</div>
-    <div id="storageDiag" style="font-size:10px;color:var(--muted);background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;margin-bottom:16px;letter-spacing:0.5px"></div>
-    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px">API Key</div>
-    <input id="apiKeyInput" type="password" placeholder="sk-ant-api03-..." style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-family:'DM Mono',monospace;font-size:13px;color:var(--text);outline:none;margin-bottom:16px" />
-    <div style="display:flex;gap:10px">
-      <button onclick="closeSettings()" style="flex:1;padding:13px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;border-radius:8px;cursor:pointer;background:var(--bg);color:var(--muted);border:1px solid var(--border)">Cancel</button>
-      <button onclick="submitApiKey()" style="flex:1;padding:13px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;border-radius:8px;cursor:pointer;background:var(--gold);color:#fff;border:none">Save Key</button>
+<div id="settingsModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:150;align-items:center;justify-content:center;padding:16px;overflow-y:auto" class="modal-wrap">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:24px;width:100%;max-width:360px;margin:auto">
+
+    <!-- API KEY SECTION -->
+    <div style="font-family:'DM Serif Display',serif;font-size:20px;margin-bottom:6px;color:var(--text)">Settings</div>
+    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;margin-top:16px">Anthropic API Key</div>
+    <div style="font-size:10px;color:var(--muted);margin-bottom:8px;line-height:1.5">Stored privately on this device only. Get yours at <strong>console.anthropic.com</strong>.</div>
+    <div id="storageDiag" style="font-size:10px;color:var(--muted);background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;margin-bottom:10px;letter-spacing:0.5px"></div>
+    <input id="apiKeyInput" type="password" placeholder="sk-ant-api03-..." style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-family:'DM Mono',monospace;font-size:13px;color:var(--text);outline:none;margin-bottom:10px" />
+    <button onclick="submitApiKey()" style="width:100%;padding:12px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;border-radius:8px;cursor:pointer;background:var(--gold);color:#fff;border:none;margin-bottom:20px">Save API Key</button>
+
+    <!-- DIVIDER -->
+    <div style="border-top:1px solid var(--border);margin-bottom:16px"></div>
+
+    <!-- PROPERTY MANAGEMENT -->
+    <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Properties</div>
+    <div id="propList" style="margin-bottom:10px"></div>
+    <div style="display:flex;gap:8px">
+      <input id="newPropInput" type="text" placeholder="e.g. 123 Main St" style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-family:'DM Mono',monospace;font-size:12px;color:var(--text);outline:none" />
+      <button onclick="addProperty()" style="padding:10px 16px;background:var(--gold);color:#fff;border:none;border-radius:8px;font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;letter-spacing:1px;white-space:nowrap">+ Add</button>
     </div>
+    <div style="font-size:10px;color:var(--muted);margin-top:6px;line-height:1.5">⚠ Deleting a property won't remove existing receipts tagged to it.</div>
+
+    <!-- CLOSE -->
+    <button onclick="closeSettings()" style="width:100%;margin-top:20px;padding:12px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;border-radius:8px;cursor:pointer;background:var(--bg);color:var(--muted);border:1px solid var(--border)">Close</button>
   </div>
 </div>
 
@@ -318,34 +332,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 /* ── DATA ─────────────────────────────────────────── */
-const ALL_CODES=[
-  {p:"14 FC",c:"HOA"},{p:"14 FC",c:"Insurance"},{p:"14 FC",c:"Material"},
-  {p:"14 FC",c:"Misc."},{p:"14 FC",c:"Pest Control"},{p:"14 FC",c:"Property Tax"},
-  {p:"14 FC",c:"Rental Income"},{p:"14 FC",c:"Utilities"},
-  {p:"1532 RRT",c:"Insurance"},{p:"1532 RRT",c:"Material"},{p:"1532 RRT",c:"Misc."},
-  {p:"1532 RRT",c:"Property Tax"},{p:"1532 RRT",c:"Rental Income"},{p:"1532 RRT",c:"Repair"},
-  {p:"158 RCD",c:"Insurance"},{p:"158 RCD",c:"Material"},{p:"158 RCD",c:"Misc."},
-  {p:"158 RCD",c:"Mortgage Payment"},{p:"158 RCD",c:"Pest Control"},
-  {p:"158 RCD",c:"Property Tax"},{p:"158 RCD",c:"Rental Income"},
-  {p:"253 OSW",c:"HOA"},{p:"253 OSW",c:"Insurance"},{p:"253 OSW",c:"Misc."},
-  {p:"253 OSW",c:"Pest Control"},{p:"253 OSW",c:"Property Tax"},
-  {p:"253 OSW",c:"Rental Income"},{p:"253 OSW",c:"Utilities"},
-  {p:"302 HCL",c:"Insurance"},{p:"302 HCL",c:"Material"},{p:"302 HCL",c:"Misc."},
-  {p:"302 HCL",c:"Property Tax"},{p:"302 HCL",c:"Rental Income"},
-  {p:"318 HCL",c:"Insurance"},{p:"318 HCL",c:"Misc."},{p:"318 HCL",c:"Mortgage Payment"},
-  {p:"318 HCL",c:"Property Tax"},{p:"318 HCL",c:"Rental Income"},
-  {p:"810 HW",c:"Insurance"},{p:"810 HW",c:"Material"},{p:"810 HW",c:"Misc."},
-  {p:"810 HW",c:"Property Tax"},{p:"810 HW",c:"Rental Income"},{p:"810 HW",c:"Repair"},
-  {p:"885 OCR",c:"Insurance"},{p:"885 OCR",c:"Material"},{p:"885 OCR",c:"Misc."},
-  {p:"885 OCR",c:"Property Tax"},{p:"885 OCR",c:"Rental Income"},{p:"885 OCR",c:"Repair"},
-  {p:"911 RRD",c:"Insurance"},{p:"911 RRD",c:"Misc."},{p:"911 RRD",c:"Property Tax"},
-  {p:"911 RRD",c:"Rental Income"},{p:"911 RRD",c:"Repair"},
-  {p:"990 OCR",c:"Insurance"},{p:"990 OCR",c:"Labor"},{p:"990 OCR",c:"Material"},
-  {p:"990 OCR",c:"Misc."},{p:"990 OCR",c:"Property Tax"},{p:"990 OCR",c:"Rental Income"},
-  {p:"990 OCR",c:"Repair"},{p:"990 OCR",c:"Security Deposit"},{p:"990 OCR",c:"Utilities"},
-  {p:"BSL Homes",c:"Insurance"},{p:"BSL Homes",c:"Misc."}
-];
-const PROPERTIES=[...new Set(ALL_CODES.map(x=>x.p))];
+const PROPERTIES=["14 FC","1532 RRT","158 RCD","253 OSW","302 HCL","318 HCL","810 HW","885 OCR","911 RRD","990 OCR","BSL Homes"];
+const CATEGORIES=["Material","Misc.","Repair"];
+const ALL_CODES=PROPERTIES.flatMap(p=>CATEGORIES.map(c=>({p,c})));
 
 /* ── STATE ────────────────────────────────────────── */
 let receipts=[], currentImgData=null, filterCat='ALL', filterProp='ALL';
@@ -358,7 +347,7 @@ function init(){
   try{const s=localStorage.getItem('receiptLedger_v1');if(s)receipts=JSON.parse(s);}catch(e){}
   document.getElementById('fDate').value=new Date().toISOString().split('T')[0];
   const ps=document.getElementById('fProperty');
-  PROPERTIES.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;ps.appendChild(o);});
+  loadProperties().forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;ps.appendChild(o);});
   updateTabLabel(); renderReceipts(); registerSW();
   const ob=document.getElementById('offlineBadge');
   window.addEventListener('online', ()=>ob.classList.toggle('show',!navigator.onLine));
@@ -382,6 +371,13 @@ self.addEventListener('fetch',e=>{
   }));
 });`;
   navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw],{type:'application/javascript'}))).catch(()=>{});
+}
+
+/* ── DATE FORMAT ──────────────────────────────────── */
+function fmtDate(iso){
+  if(!iso) return '';
+  const [y,m,d]=iso.split('-');
+  return `${parseInt(m)}/${parseInt(d)}/${String(y).slice(-2)}`;
 }
 
 /* ── PERSISTENCE ──────────────────────────────────── */
@@ -567,22 +563,70 @@ async function extractWithAI(){
 /* ── API KEY ──────────────────────────────────────── */
 function getApiKey(){ return localStorage.getItem('rl_apikey')||''; }
 function saveApiKey(k){ localStorage.setItem('rl_apikey', k.trim()); }
+
+/* ── PROPERTY MANAGEMENT ──────────────────────────── */
+function loadProperties(){
+  const stored = localStorage.getItem('rl_properties');
+  if(stored){ try{ return JSON.parse(stored); }catch(e){} }
+  return ["14 FC","1532 RRT","158 RCD","253 OSW","302 HCL","318 HCL","810 HW","885 OCR","911 RRD","990 OCR","BSL Homes"];
+}
+function saveProperties(props){ localStorage.setItem('rl_properties', JSON.stringify(props)); }
+
+function addProperty(){
+  const input = document.getElementById('newPropInput');
+  const val = input.value.trim();
+  if(!val){ showToast('Enter a property name'); return; }
+  const props = loadProperties();
+  if(props.includes(val)){ showToast('Property already exists'); return; }
+  props.push(val);
+  saveProperties(props);
+  input.value='';
+  refreshPropertyDropdown();
+  renderPropList();
+  showToast(val + ' added ✓');
+}
+
+function deleteProperty(prop){
+  const props = loadProperties().filter(p=>p!==prop);
+  saveProperties(props);
+  refreshPropertyDropdown();
+  renderPropList();
+  showToast(prop + ' removed');
+}
+
+function refreshPropertyDropdown(){
+  const props = loadProperties();
+  const sel = document.getElementById('fProperty');
+  const current = sel.value;
+  sel.innerHTML='<option value="">— Select property —</option>';
+  props.forEach(p=>{ const o=document.createElement('option'); o.value=p; o.textContent=p; if(p===current)o.selected=true; sel.appendChild(o); });
+}
+
+function renderPropList(){
+  const props = loadProperties();
+  const el = document.getElementById('propList');
+  el.innerHTML='';
+  props.forEach(p=>{
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;margin-bottom:6px';
+    row.innerHTML=`<span style="font-size:12px;color:var(--text)">${esc(p)}</span>
+      <button onclick="deleteProperty('${esc(p)}')" style="background:var(--red-bg);border:1px solid #e0a090;border-radius:4px;color:var(--red);font-size:10px;padding:4px 10px;cursor:pointer;font-family:'DM Mono',monospace;letter-spacing:0.5px">Remove</button>`;
+    el.appendChild(row);
+  });
+}
 function openSettings(){
   const k=getApiKey();
   document.getElementById('apiKeyInput').value=k?'sk-ant-...'+k.slice(-6):'';
-  // Run storage diagnostic
   try {
     localStorage.setItem('rl_test','1');
-    const ok = localStorage.getItem('rl_test')==='1';
+    const ok=localStorage.getItem('rl_test')==='1';
     localStorage.removeItem('rl_test');
-    const saved = localStorage.getItem('receiptLedger_v1');
-    const count = saved ? JSON.parse(saved).length : 0;
-    const size  = saved ? (saved.length/1024).toFixed(1) : 0;
-    document.getElementById('storageDiag').textContent =
-      ok ? `✓ Storage working · ${count} receipts saved · ${size}KB used` : '✗ Storage not working!';
-  } catch(e) {
-    document.getElementById('storageDiag').textContent = '✗ Storage error: ' + e.message;
-  }
+    const saved=localStorage.getItem('receiptLedger_v1');
+    const count=saved?JSON.parse(saved).length:0;
+    const size=saved?(saved.length/1024).toFixed(1):0;
+    document.getElementById('storageDiag').textContent=ok?`✓ Storage working · ${count} receipts saved · ${size}KB used`:'✗ Storage not working!';
+  } catch(e){ document.getElementById('storageDiag').textContent='✗ Storage error: '+e.message; }
+  renderPropList();
   document.getElementById('settingsModal').classList.add('show');
 }
 function closeSettings(){ document.getElementById('settingsModal').classList.remove('show'); }
@@ -668,7 +712,7 @@ function resetForm(){
 function askDelete(id){
   pendingDeleteId=id;
   const r=receipts.find(x=>x.id===id);
-  document.getElementById('confirmMsg').textContent=r?`"${r.vendor}" — $${parseFloat(r.amount).toFixed(2)} on ${r.date}`:'This receipt will be permanently removed.';
+  document.getElementById('confirmMsg').textContent=r?`"${r.vendor}" — $${parseFloat(r.amount).toFixed(2)} on ${fmtDate(r.date)}`:'This receipt will be permanently removed.';
   document.getElementById('confirmModal').classList.add('show');
 }
 function closeConfirm(){pendingDeleteId=null;document.getElementById('confirmModal').classList.remove('show');}
@@ -706,7 +750,7 @@ function renderReceipts(){
     card.innerHTML=`${thumb}
       <div class="receipt-info">
         <div class="receipt-vendor">${esc(r.vendor)}</div>
-        <div class="receipt-meta">${r.date} · ${esc(r.propCode)}:${esc(r.taxCode)}</div>
+        <div class="receipt-meta">${fmtDate(r.date)} · ${esc(r.propCode)}:${esc(r.taxCode)}</div>
         <div class="receipt-tags"><span class="tag tag-prop">${esc(r.propCode)}</span><span class="tag tag-cat">${esc(r.taxCode)}</span></div>
         ${r.description?`<div class="receipt-note">${esc(r.description)}</div>`:''}
       </div>
@@ -730,7 +774,7 @@ function buildWB(){
     const amt = parseFloat(r.amount) || 0;
     return {
       'Num':        '',
-      'Date':       r.date,
+      'Date':       fmtDate(r.date),
       'Account':    'Captured in Receipt Ledger App',
       'Payee':      r.vendor,
       'Category':   r.propCode + ':' + r.taxCode,
@@ -797,7 +841,7 @@ function exportCSV(){
       const amt=parseFloat(r.amount)||0;
       return [
         '',
-        r.date,
+        fmtDate(r.date),
         'Captured in Receipt Ledger App',
         '"'+r.vendor.replace(/"/g,'""')+'"',
         '"'+r.propCode+':'+r.taxCode+'"',
@@ -848,6 +892,80 @@ function dlAndEmail(blob,fname){
     URL.revokeObjectURL(url);
   },600);
   showToast('File saved — opening email...');
+}
+
+/* ── PDF EXPORT ───────────────────────────────────── */
+function exportPDF(){
+  if(!receipts.length){showToast('No receipts to export');return;}
+
+  const year = new Date().getFullYear();
+  const byProp = {};
+  receipts.forEach(r=>{
+    if(!byProp[r.propCode]) byProp[r.propCode]=[];
+    byProp[r.propCode].push(r);
+  });
+
+  let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
+  <title>Receipt Ledger ${year}</title>
+  <style>
+    body{font-family:Arial,sans-serif;font-size:12px;margin:0;padding:0;color:#1a1a1a}
+    .property-section{page-break-after:always;padding:24px}
+    .property-section:last-child{page-break-after:avoid}
+    h1{font-size:18px;margin:0 0 4px}
+    .sub{font-size:11px;color:#666;margin-bottom:16px}
+    table{width:100%;border-collapse:collapse;margin-bottom:16px}
+    th{background:#f0ebe0;text-align:left;padding:6px 8px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;border-bottom:2px solid #c8a96e}
+    td{padding:6px 8px;border-bottom:1px solid #eee;vertical-align:top}
+    tr:nth-child(even) td{background:#fafaf8}
+    .amt{text-align:right;font-weight:bold}
+    .neg{color:#c0513a}
+    .total-row td{font-weight:bold;border-top:2px solid #c8a96e;background:#f0ebe0}
+    .thumb{width:48px;height:48px;object-fit:cover;border-radius:4px;border:1px solid #ddd}
+    .no-thumb{width:48px;height:48px;background:#f0ebe0;border-radius:4px;display:inline-block;text-align:center;line-height:48px;font-size:20px}
+  </style></head><body>`;
+
+  Object.entries(byProp).forEach(([prop, recs])=>{
+    const total = recs.reduce((s,r)=>s+(parseFloat(r.amount)||0),0);
+    html += `<div class="property-section">
+      <h1>${prop}</h1>
+      <div class="sub">Receipt Ledger · ${year} · ${recs.length} receipt${recs.length!==1?'s':''}</div>
+      <table>
+        <thead><tr>
+          <th>Photo</th><th>Date</th><th>Payee</th><th>Category</th><th>Comment</th><th style="text-align:right">Amount</th>
+        </tr></thead>
+        <tbody>`;
+    recs.forEach(r=>{
+      const amt=parseFloat(r.amount)||0;
+      const amtStr=(amt<0?'-':'')+'$'+Math.abs(amt).toFixed(2);
+      const thumb=r.imgData
+        ?`<img class="thumb" src="${r.imgData}" />`
+        :`<span class="no-thumb">🧾</span>`;
+      html+=`<tr>
+        <td>${thumb}</td>
+        <td>${fmtDate(r.date)}</td>
+        <td>${esc(r.vendor)}</td>
+        <td>${esc(r.taxCode)}</td>
+        <td>${esc(r.description||'')}</td>
+        <td class="amt${amt<0?' neg':''}">${amtStr}</td>
+      </tr>`;
+    });
+    html+=`<tr class="total-row">
+      <td colspan="5">Total</td>
+      <td class="amt${total<0?' neg':''}">${(total<0?'-':'')+'$'+Math.abs(total).toFixed(2)}</td>
+    </tr></tbody></table></div>`;
+  });
+
+  html += '</body></html>';
+
+  const blob = new Blob([html],{type:'text/html'});
+  const fname = `receipt-ledger-${year}.html`;
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download=fname;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  showToast('Report saved — open in browser to print as PDF');
 }
 
 /* ── TOAST ────────────────────────────────────────── */
