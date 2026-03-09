@@ -151,8 +151,6 @@
   </style>
 </head>
 <body>
-<script src="https://apis.google.com/js/api.js"></script>
-<script src="https://accounts.google.com/gsi/client"></script>
 <div id="app">
 
   <div class="header">
@@ -1002,34 +1000,43 @@ function exportPDF(){
 /* ── GOOGLE DRIVE ─────────────────────────────────── */
 const GDRIVE_CLIENT_ID = '310323894535-c20dk5pbjdb2fli147havskbr8usrg12.apps.googleusercontent.com';
 const GDRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+const GDRIVE_REDIRECT = 'https://cblakester.github.io/receipt-ledger/';
 let driveToken = null;
 let driveFolderId = null;
 
 function initDrive(){
-  const stored = localStorage.getItem('rl_drive_token');
-  if(stored){
-    driveToken = stored;
-    document.getElementById('driveBadge').style.display = 'block';
+  // Check for token in URL hash (returned from Google OAuth redirect)
+  const hash = window.location.hash;
+  if(hash && hash.includes('access_token')){
+    const params = new URLSearchParams(hash.replace('#',''));
+    const token = params.get('access_token');
+    if(token){
+      driveToken = token;
+      localStorage.setItem('rl_drive_token', token);
+      // Clean up URL
+      window.history.replaceState(null, '', window.location.pathname);
+      ensureDriveFolder().then(()=>{
+        document.getElementById('driveBadge').style.display='block';
+        showToast('Google Drive connected ✓');
+      });
+    }
+  } else {
+    // Load stored token
+    const stored = localStorage.getItem('rl_drive_token');
+    if(stored){ driveToken = stored; document.getElementById('driveBadge').style.display='block'; }
   }
   const fid = localStorage.getItem('rl_drive_folder');
   if(fid) driveFolderId = fid;
 }
 
 function connectDrive(){
-  const client = google.accounts.oauth2.initTokenClient({
-    client_id: GDRIVE_CLIENT_ID,
-    scope: GDRIVE_SCOPE,
-    callback: async (resp) => {
-      if(resp.error){ showToast('Drive connection failed: ' + resp.error); return; }
-      driveToken = resp.access_token;
-      localStorage.setItem('rl_drive_token', driveToken);
-      await ensureDriveFolder();
-      document.getElementById('driveBadge').style.display = 'block';
-      updateDriveUI();
-      showToast('Google Drive connected ✓');
-    }
-  });
-  client.requestAccessToken();
+  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+    `client_id=${GDRIVE_CLIENT_ID}` +
+    `&redirect_uri=${encodeURIComponent(GDRIVE_REDIRECT)}` +
+    `&response_type=token` +
+    `&scope=${encodeURIComponent(GDRIVE_SCOPE)}` +
+    `&prompt=consent`;
+  window.location.href = authUrl;
 }
 
 function disconnectDrive(){
@@ -1051,26 +1058,26 @@ function updateDriveUI(){
 
 async function ensureDriveFolder(){
   if(driveFolderId) return driveFolderId;
-  // Check if folder already exists
-  const search = await fetch(
-    `https://www.googleapis.com/drive/v3/files?q=name='Receipt Ledger' and mimeType='application/vnd.google-apps.folder' and trashed=false&fields=files(id,name)`,
-    {headers:{Authorization:'Bearer '+driveToken}}
-  );
-  const data = await search.json();
-  if(data.files && data.files.length > 0){
-    driveFolderId = data.files[0].id;
-  } else {
-    // Create folder
-    const create = await fetch('https://www.googleapis.com/drive/v3/files', {
-      method:'POST',
-      headers:{Authorization:'Bearer '+driveToken,'Content-Type':'application/json'},
-      body: JSON.stringify({name:'Receipt Ledger', mimeType:'application/vnd.google-apps.folder'})
-    });
-    const folder = await create.json();
-    driveFolderId = folder.id;
-  }
-  localStorage.setItem('rl_drive_folder', driveFolderId);
-  return driveFolderId;
+  try{
+    const search = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=name='Receipt Ledger' and mimeType='application/vnd.google-apps.folder' and trashed=false&fields=files(id,name)`,
+      {headers:{Authorization:'Bearer '+driveToken}}
+    );
+    const data = await search.json();
+    if(data.files && data.files.length > 0){
+      driveFolderId = data.files[0].id;
+    } else {
+      const create = await fetch('https://www.googleapis.com/drive/v3/files', {
+        method:'POST',
+        headers:{Authorization:'Bearer '+driveToken,'Content-Type':'application/json'},
+        body: JSON.stringify({name:'Receipt Ledger', mimeType:'application/vnd.google-apps.folder'})
+      });
+      const folder = await create.json();
+      driveFolderId = folder.id;
+    }
+    localStorage.setItem('rl_drive_folder', driveFolderId);
+    return driveFolderId;
+  } catch(e){ console.warn('Drive folder error:', e); }
 }
 
 async function uploadToDrive(receipt, fullResImageData){
@@ -1080,24 +1087,22 @@ async function uploadToDrive(receipt, fullResImageData){
     const amt = parseFloat(receipt.amount)||0;
     const amtStr = (amt<0?'RETURN_':'') + Math.abs(amt).toFixed(2);
     const fname = `${receipt.propCode.replace(/\s/g,'_')}_${receipt.date}_${receipt.taxCode}_${receipt.vendor.replace(/[^a-z0-9]/gi,'_')}_$${amtStr}.jpg`;
-
-    // Convert base64 to blob
     const base64 = fullResImageData.split(',')[1];
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for(let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
-    const imgBlob = new Blob([bytes],{type:'image/jpeg'});
-
-    // Multipart upload
-    const boundary = '-------receipt_ledger_boundary';
+    const boundary = 'receipt_ledger_boundary';
     const meta = JSON.stringify({name:fname, parents:[driveFolderId]});
     const body = `--${boundary}\r\nContent-Type: application/json\r\n\r\n${meta}\r\n--${boundary}\r\nContent-Type: image/jpeg\r\nContent-Transfer-Encoding: base64\r\n\r\n${base64}\r\n--${boundary}--`;
-
-    await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+    const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
       method:'POST',
       headers:{Authorization:'Bearer '+driveToken, 'Content-Type':`multipart/related; boundary=${boundary}`},
       body
     });
+    if(res.status === 401){
+      // Token expired — clear it
+      driveToken = null;
+      localStorage.removeItem('rl_drive_token');
+      document.getElementById('driveBadge').style.display='none';
+      showToast('Drive token expired — reconnect in Settings');
+    }
   } catch(e){ console.warn('Drive upload failed:', e); }
 }
 
