@@ -788,6 +788,13 @@ function buildWB(){
 
   const wb = XLSX.utils.book_new();
   const ws1 = XLSX.utils.json_to_sheet(rows);
+
+  // Force Date column (B) to text format so Excel doesn't reformat it
+  const range = XLSX.utils.decode_range(ws1['!ref']);
+  for(let row = range.s.r + 1; row <= range.e.r; row++){
+    const cell = ws1[XLSX.utils.encode_cell({r:row, c:1})];
+    if(cell){ cell.t='s'; cell.z='@'; }
+  }
   ws1['!cols'] = [
     {wch:6},   // Num
     {wch:12},  // Date
@@ -922,7 +929,10 @@ function exportPDF(){
     .total-row td{font-weight:bold;border-top:2px solid #c8a96e;background:#f0ebe0}
     .thumb{width:48px;height:48px;object-fit:cover;border-radius:4px;border:1px solid #ddd}
     .no-thumb{width:48px;height:48px;background:#f0ebe0;border-radius:4px;display:inline-block;text-align:center;line-height:48px;font-size:20px}
-  </style></head><body>`;
+    .print-btn{position:fixed;top:16px;right:16px;padding:10px 20px;background:#c8a96e;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;z-index:999}
+    @media print{.print-btn{display:none}}
+  </style></head><body>
+  <button class="print-btn" onclick="window.print()">🖨 Print / Save as PDF</button>`;
 
   Object.entries(byProp).forEach(([prop, recs])=>{
     const total = recs.reduce((s,r)=>s+(parseFloat(r.amount)||0),0);
@@ -932,8 +942,7 @@ function exportPDF(){
       <table>
         <thead><tr>
           <th>Photo</th><th>Date</th><th>Payee</th><th>Category</th><th>Comment</th><th style="text-align:right">Amount</th>
-        </tr></thead>
-        <tbody>`;
+        </tr></thead><tbody>`;
     recs.forEach(r=>{
       const amt=parseFloat(r.amount)||0;
       const amtStr=(amt<0?'-':'')+'$'+Math.abs(amt).toFixed(2);
@@ -954,18 +963,24 @@ function exportPDF(){
       <td class="amt${total<0?' neg':''}">${(total<0?'-':'')+'$'+Math.abs(total).toFixed(2)}</td>
     </tr></tbody></table></div>`;
   });
-
   html += '</body></html>';
 
-  const blob = new Blob([html],{type:'text/html'});
-  const fname = `receipt-ledger-${year}.html`;
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href=url; a.download=fname;
-  document.body.appendChild(a); a.click();
-  document.body.removeChild(a);
-  setTimeout(()=>URL.revokeObjectURL(url),1000);
-  showToast('Report saved — open in browser to print as PDF');
+  // Open in new window so user can print or Save as PDF
+  const win = window.open('', '_blank');
+  if(win){
+    win.document.write(html);
+    win.document.close();
+  } else {
+    // Fallback if popup blocked — download as HTML
+    const blob = new Blob([html],{type:'text/html'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href=url; a.download=`receipt-ledger-${year}.html`;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+    showToast('Saved — open file in Chrome then print');
+  }
 }
 
 /* ── TOAST ────────────────────────────────────────── */
