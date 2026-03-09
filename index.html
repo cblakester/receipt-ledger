@@ -218,9 +218,12 @@
     <div class="row-fields">
       <div class="field">
         <label>Amount</label>
-        <div class="amount-wrap">
-          <span class="dollar">$</span>
-          <input type="number" id="fAmount" placeholder="0.00" step="0.01" inputmode="decimal" />
+        <div class="amount-wrap" style="display:flex;gap:8px;align-items:center">
+          <button id="btnSign" onclick="toggleSign()" style="flex-shrink:0;width:42px;height:44px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);font-family:'DM Mono',monospace;font-size:16px;cursor:pointer;color:var(--text);transition:all 0.2s">+</button>
+          <div style="position:relative;flex:1">
+            <span class="dollar">$</span>
+            <input type="number" id="fAmount" placeholder="0.00" step="0.01" inputmode="decimal" />
+          </div>
         </div>
       </div>
       <div class="field">
@@ -277,7 +280,8 @@
   <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:28px 24px;width:100%;max-width:360px">
     <div style="font-family:'DM Serif Display',serif;font-size:20px;margin-bottom:8px;color:var(--text)">API Key Setup</div>
     <div style="font-size:11px;color:var(--muted);margin-bottom:6px;line-height:1.6">Your Anthropic API key is stored privately on this device only — never uploaded anywhere.</div>
-    <div style="font-size:11px;color:var(--muted);margin-bottom:20px;line-height:1.6">Get your key at <strong>console.anthropic.com</strong> → API Keys → Create Key.</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.6">Get your key at <strong>console.anthropic.com</strong> → API Keys → Create Key.</div>
+    <div id="storageDiag" style="font-size:10px;color:var(--muted);background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;margin-bottom:16px;letter-spacing:0.5px"></div>
     <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px">API Key</div>
     <input id="apiKeyInput" type="password" placeholder="sk-ant-api03-..." style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-family:'DM Mono',monospace;font-size:13px;color:var(--text);outline:none;margin-bottom:16px" />
     <div style="display:flex;gap:10px">
@@ -378,8 +382,22 @@ self.addEventListener('fetch',e=>{
 
 /* ── PERSISTENCE ──────────────────────────────────── */
 function save(){
-  try{localStorage.setItem('receiptLedger_v1',JSON.stringify(receipts));}
-  catch(e){showToast('Storage full — export to free space');}
+  try{
+    const data=JSON.stringify(receipts);
+    localStorage.setItem('receiptLedger_v1',data);
+    // Verify it actually saved
+    const verify=localStorage.getItem('receiptLedger_v1');
+    if(!verify || JSON.parse(verify).length !== receipts.length){
+      showToast('⚠ Save failed — storage may be full');
+      return false;
+    }
+    if(data.length>4000000) showToast('Storage nearly full — export soon!');
+    return true;
+  }
+  catch(e){
+    showToast('Storage full — export & delete old receipts');
+    return false;
+  }
 }
 
 /* ── TABS ─────────────────────────────────────────── */
@@ -548,6 +566,19 @@ function saveApiKey(k){ localStorage.setItem('rl_apikey', k.trim()); }
 function openSettings(){
   const k=getApiKey();
   document.getElementById('apiKeyInput').value=k?'sk-ant-...'+k.slice(-6):'';
+  // Run storage diagnostic
+  try {
+    localStorage.setItem('rl_test','1');
+    const ok = localStorage.getItem('rl_test')==='1';
+    localStorage.removeItem('rl_test');
+    const saved = localStorage.getItem('receiptLedger_v1');
+    const count = saved ? JSON.parse(saved).length : 0;
+    const size  = saved ? (saved.length/1024).toFixed(1) : 0;
+    document.getElementById('storageDiag').textContent =
+      ok ? `✓ Storage working · ${count} receipts saved · ${size}KB used` : '✗ Storage not working!';
+  } catch(e) {
+    document.getElementById('storageDiag').textContent = '✗ Storage error: ' + e.message;
+  }
   document.getElementById('settingsModal').classList.add('show');
 }
 function closeSettings(){ document.getElementById('settingsModal').classList.remove('show'); }
@@ -557,6 +588,24 @@ function submitApiKey(){
   saveApiKey(val);
   closeSettings();
   showToast('API key saved ✓');
+}
+
+/* ── SIGN TOGGLE ──────────────────────────────────── */
+let amountSign = 1;
+function toggleSign(){
+  amountSign = amountSign * -1;
+  const btn = document.getElementById('btnSign');
+  if(amountSign === -1){
+    btn.textContent = '−';
+    btn.style.background = '#fdf0ed';
+    btn.style.borderColor = '#e0a090';
+    btn.style.color = '#c0513a';
+  } else {
+    btn.textContent = '+';
+    btn.style.background = 'var(--bg2)';
+    btn.style.borderColor = 'var(--border)';
+    btn.style.color = 'var(--text)';
+  }
 }
 
 /* ── DROPDOWNS ────────────────────────────────────── */
@@ -579,11 +628,23 @@ function saveReceipt(){
   const cat   =document.getElementById('fCategory').value;
   const desc  =document.getElementById('fDesc').value.trim();
   if(!vendor||!amount||!prop||!cat){showToast('Fill in vendor, amount, property & category');return;}
-  receipts.unshift({id:Date.now(),vendor,amount,date,propCode:prop,taxCode:cat,description:desc,imgData:currentImgData,savedAt:new Date().toLocaleString()});
-  save(); updateTabLabel(); showToast('Receipt saved ✓'); resetForm(); showTab('receipts');
+  const finalAmount = (parseFloat(amount) * amountSign).toString();
+
+  // Compress image aggressively for storage (thumbnail only)
+  if(currentImgData){
+    compressImage(currentImgData, 400, 0.55).then(thumb => {
+      receipts.unshift({id:Date.now(),vendor,amount:finalAmount,date,propCode:prop,taxCode:cat,description:desc,imgData:thumb,savedAt:new Date().toLocaleString()});
+      save(); updateTabLabel(); showToast('Receipt saved ✓'); resetForm(); showTab('receipts');
+    });
+  } else {
+    receipts.unshift({id:Date.now(),vendor,amount:finalAmount,date,propCode:prop,taxCode:cat,description:desc,imgData:null,savedAt:new Date().toLocaleString()});
+    save(); updateTabLabel(); showToast('Receipt saved ✓'); resetForm(); showTab('receipts');
+  }
 }
 function resetForm(){
-  currentImgData=null; cropRect=null;
+  currentImgData=null; cropRect=null; amountSign=1;
+  const signBtn=document.getElementById('btnSign');
+  if(signBtn){signBtn.textContent='+';signBtn.style.background='var(--bg2)';signBtn.style.borderColor='var(--border)';signBtn.style.color='var(--text)';}
   ['fVendor','fAmount','fDesc'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('fDate').value=new Date().toISOString().split('T')[0];
   document.getElementById('fProperty').value='';
