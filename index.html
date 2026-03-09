@@ -43,7 +43,8 @@
 
     /* PREVIEW */
     #previewWrap{display:none;margin-bottom:14px}
-    #previewImg{width:100%;max-height:220px;object-fit:cover;border-radius:10px;border:1px solid var(--border);display:block}
+    #previewImgScroll{width:100%;max-height:260px;overflow:auto;border-radius:10px;border:1px solid var(--border);background:#000}
+    #previewImg{width:100%;display:block;touch-action:pan-x pan-y pinch-zoom;cursor:zoom-in}
     .preview-actions{display:flex;gap:8px;margin-top:8px}
     .preview-actions button{flex:1;padding:10px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);cursor:pointer;transition:all 0.2s}
     .preview-actions button:active{color:var(--gold);border-color:var(--gold)}
@@ -186,7 +187,9 @@
 
     <!-- Preview + action buttons -->
     <div id="previewWrap">
-      <img id="previewImg" alt="Receipt preview" />
+      <div id="previewImgScroll">
+        <img id="previewImg" alt="Receipt preview" />
+      </div>
       <div class="preview-actions">
         <button onclick="startCrop()">✂ Crop</button>
         <button onclick="document.getElementById('fileCamera').click()">📷 Retake</button>
@@ -722,15 +725,49 @@ function closeViewer(){document.getElementById('imgViewer').classList.remove('sh
 
 /* ── EXCEL EXPORT ─────────────────────────────────── */
 function buildWB(){
-  const rows=receipts.map(r=>({'Date':r.date,'Vendor':r.vendor,'Amount ($)':parseFloat(r.amount)||0,'Property':r.propCode,'Category':r.taxCode,'Full Code':r.propCode+':'+r.taxCode,'Description':r.description||'','Saved At':r.savedAt}));
+  const rows = receipts.map(r => {
+    const amt = parseFloat(r.amount) || 0;
+    return {
+      'Num':        '',
+      'Date':       r.date,
+      'Account':    'Captured in Receipt Ledger App',
+      'Payee':      r.vendor,
+      'Category':   r.propCode + ':' + r.taxCode,
+      'S':          'I',
+      'Withdrawal': amt > 0 ? amt.toFixed(2) : '',
+      'Deposit':    amt < 0 ? Math.abs(amt).toFixed(2) : '',
+      'Total':      '',
+      'Comment':    r.description || ''
+    };
+  });
+
+  const wb = XLSX.utils.book_new();
+  const ws1 = XLSX.utils.json_to_sheet(rows);
+  ws1['!cols'] = [
+    {wch:6},   // Num
+    {wch:12},  // Date
+    {wch:32},  // Account
+    {wch:24},  // Payee
+    {wch:22},  // Category
+    {wch:4},   // S
+    {wch:12},  // Withdrawal
+    {wch:12},  // Deposit
+    {wch:10},  // Total
+    {wch:32},  // Comment
+  ];
+  XLSX.utils.book_append_sheet(wb, ws1, 'Receipts');
+
+  // Summary sheet
   const totals={};
-  receipts.forEach(r=>{const k=r.propCode+':'+r.taxCode;totals[k]=(totals[k]||0)+(parseFloat(r.amount)||0);});
-  const srows=Object.entries(totals).map(([c,t])=>({'Full Code':c,'Total ($)':parseFloat(t.toFixed(2))}));
-  const wb=XLSX.utils.book_new();
-  const ws1=XLSX.utils.json_to_sheet(rows);ws1['!cols']=[{wch:12},{wch:24},{wch:12},{wch:14},{wch:18},{wch:22},{wch:32},{wch:20}];
-  XLSX.utils.book_append_sheet(wb,ws1,'Receipts');
-  const ws2=XLSX.utils.json_to_sheet(srows);ws2['!cols']=[{wch:28},{wch:14}];
+  receipts.forEach(r=>{
+    const k=r.propCode+':'+r.taxCode;
+    totals[k]=(totals[k]||0)+(parseFloat(r.amount)||0);
+  });
+  const srows=Object.entries(totals).map(([c,t])=>({'Category':c,'Total ($)':parseFloat(t.toFixed(2))}));
+  const ws2=XLSX.utils.json_to_sheet(srows);
+  ws2['!cols']=[{wch:28},{wch:14}];
   XLSX.utils.book_append_sheet(wb,ws2,'Summary by Code');
+
   return wb;
 }
 function exportToExcel(){
