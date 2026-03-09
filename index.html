@@ -263,8 +263,9 @@
         <div><div class="stat-label">Receipts</div><div class="stat-val" id="statCount">0</div></div>
       </div>
       <div class="export-row">
-        <button class="btn-gold" onclick="exportToExcel()">↓ Download Excel</button>
-        <button class="btn-gold" onclick="shareExcel()">✉ Email / Share</button>
+        <button class="btn-gold" onclick="exportToExcel()">↓ Excel</button>
+        <button class="btn-gold" onclick="exportCSV()">↓ CSV</button>
+        <button class="btn-gold" onclick="shareExcel()">✉ Share</button>
       </div>
       <div class="filter-row" id="filterCats"></div>
       <div class="filter-row" id="filterProps"></div>
@@ -773,8 +774,51 @@ function buildWB(){
 function exportToExcel(){
   if(!window.XLSX){showToast('Library loading — try again');return;}
   if(!receipts.length){showToast('No receipts to export');return;}
-  XLSX.writeFile(buildWB(),`property-receipts-${new Date().getFullYear()}.xlsx`);
-  showToast('Excel file downloaded ✓');
+  try{
+    const wb=buildWB();
+    const out=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+    const blob=new Blob([out],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const fname=`property-receipts-${new Date().getFullYear()}.xlsx`;
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=fname;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url), 1000);
+    showToast('Excel saved to Downloads ✓');
+  } catch(e){ showToast('Excel failed — try CSV instead'); }
+}
+
+function exportCSV(){
+  if(!receipts.length){showToast('No receipts to export');return;}
+  try{
+    const headers=['Num','Date','Account','Payee','Category','S','Withdrawal','Deposit','Total','Comment'];
+    const rows=receipts.map(r=>{
+      const amt=parseFloat(r.amount)||0;
+      return [
+        '',
+        r.date,
+        'Captured in Receipt Ledger App',
+        '"'+r.vendor.replace(/"/g,'""')+'"',
+        '"'+r.propCode+':'+r.taxCode+'"',
+        'I',
+        amt>0 ? amt.toFixed(2) : '',
+        amt<0 ? Math.abs(amt).toFixed(2) : '',
+        '',
+        '"'+(r.description||'').replace(/"/g,'""')+'"'
+      ].join(',');
+    });
+    const csv=[headers.join(','),...rows].join('\n');
+    const blob=new Blob([csv],{type:'text/csv'});
+    const fname=`property-receipts-${new Date().getFullYear()}.csv`;
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=fname;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url), 1000);
+    showToast('CSV saved to Downloads ✓');
+  } catch(e){ showToast('Export failed: '+e.message); }
 }
 function shareExcel(){
   if(!window.XLSX){showToast('Library loading — try again');return;}
