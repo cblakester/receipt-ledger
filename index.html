@@ -331,8 +331,7 @@
 <script>
 /* ── DATA ─────────────────────────────────────────── */
 const PROPERTIES=["14 FC","1532 RRT","158 RCD","253 OSW","302 HCL","318 HCL","810 HW","885 OCR","911 RRD","990 OCR","BSL Homes"];
-const CATEGORIES=["Material","Misc.","Repair"];
-const ALL_CODES=PROPERTIES.flatMap(p=>CATEGORIES.map(c=>({p,c})));
+const DEFAULT_CATS=["Material","Misc.","Repair"];
 
 /* ── STATE ────────────────────────────────────────── */
 let receipts=[], currentImgData=null, filterCat='ALL', filterProp='ALL';
@@ -562,13 +561,25 @@ async function extractWithAI(){
 function getApiKey(){ return localStorage.getItem('rl_apikey')||''; }
 function saveApiKey(k){ localStorage.setItem('rl_apikey', k.trim()); }
 
-/* ── PROPERTY MANAGEMENT ──────────────────────────── */
+/* ── PROPERTY & CATEGORY MANAGEMENT ──────────────────── */
 function loadProperties(){
   const stored = localStorage.getItem('rl_properties');
   if(stored){ try{ return JSON.parse(stored); }catch(e){} }
   return ["14 FC","1532 RRT","158 RCD","253 OSW","302 HCL","318 HCL","810 HW","885 OCR","911 RRD","990 OCR","BSL Homes"];
 }
 function saveProperties(props){ localStorage.setItem('rl_properties', JSON.stringify(props)); }
+
+function loadPropCats(){
+  const stored = localStorage.getItem('rl_prop_cats');
+  if(stored){ try{ return JSON.parse(stored); }catch(e){} }
+  return {};
+}
+function savePropCats(pc){ localStorage.setItem('rl_prop_cats', JSON.stringify(pc)); }
+
+function getCatsForProp(prop){
+  const pc = loadPropCats();
+  return pc[prop] || [...DEFAULT_CATS];
+}
 
 function addProperty(){
   const input = document.getElementById('newPropInput');
@@ -587,9 +598,40 @@ function addProperty(){
 function deleteProperty(prop){
   const props = loadProperties().filter(p=>p!==prop);
   saveProperties(props);
+  // Remove its category overrides too
+  const pc = loadPropCats();
+  delete pc[prop];
+  savePropCats(pc);
   refreshPropertyDropdown();
   renderPropList();
   showToast(prop + ' removed');
+}
+
+function addCatToProp(prop){
+  const inputId = 'newCat_'+prop.replace(/\s/g,'_');
+  const val = document.getElementById(inputId).value.trim();
+  if(!val){ showToast('Enter a category name'); return; }
+  const cats = getCatsForProp(prop);
+  if(cats.map(c=>c.toLowerCase()).includes(val.toLowerCase())){ showToast('Category already exists'); return; }
+  cats.push(val);
+  const pc = loadPropCats();
+  pc[prop] = cats;
+  savePropCats(pc);
+  document.getElementById(inputId).value='';
+  renderPropList();
+  // Update category dropdown if this property is currently selected
+  if(document.getElementById('fProperty').value === prop) refreshCategoryDropdown(prop);
+  showToast(val + ' added to ' + prop + ' ✓');
+}
+
+function deleteCatFromProp(prop, cat){
+  const cats = getCatsForProp(prop).filter(c=>c!==cat);
+  const pc = loadPropCats();
+  pc[prop] = cats;
+  savePropCats(pc);
+  renderPropList();
+  if(document.getElementById('fProperty').value === prop) refreshCategoryDropdown(prop);
+  showToast(cat + ' removed');
 }
 
 function refreshPropertyDropdown(){
@@ -600,16 +642,69 @@ function refreshPropertyDropdown(){
   props.forEach(p=>{ const o=document.createElement('option'); o.value=p; o.textContent=p; if(p===current)o.selected=true; sel.appendChild(o); });
 }
 
+function refreshCategoryDropdown(prop){
+  const sel = document.getElementById('fCategory');
+  const current = sel.value;
+  sel.innerHTML='<option value="">— Select category —</option>';
+  if(!prop){ return; }
+  getCatsForProp(prop).forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; if(c===current)o.selected=true; sel.appendChild(o); });
+}
+
 function renderPropList(){
   const props = loadProperties();
   const el = document.getElementById('propList');
   el.innerHTML='';
   props.forEach(p=>{
-    const row=document.createElement('div');
-    row.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;margin-bottom:6px';
-    row.innerHTML=`<span style="font-size:12px;color:var(--text)">${esc(p)}</span>
-      <button onclick="deleteProperty('${esc(p)}')" style="background:var(--red-bg);border:1px solid #e0a090;border-radius:4px;color:var(--red);font-size:10px;padding:4px 10px;cursor:pointer;font-family:'DM Mono',monospace;letter-spacing:0.5px">Remove</button>`;
-    el.appendChild(row);
+    const cats = getCatsForProp(p);
+    const safeId = p.replace(/\s/g,'_').replace(/[^a-zA-Z0-9_]/g,'');
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText='border:1px solid var(--border);border-radius:8px;margin-bottom:8px;overflow:hidden';
+
+    // Property header row
+    const header = document.createElement('div');
+    header.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--bg3);cursor:pointer';
+    header.innerHTML=`
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:12px;font-weight:500;color:var(--text)">${esc(p)}</span>
+        <span style="font-size:10px;color:var(--muted)">${cats.length} categories</span>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <span id="arrow_${safeId}" style="font-size:10px;color:var(--muted)">▶</span>
+        <button onclick="event.stopPropagation();deleteProperty('${esc(p)}')" style="background:var(--red-bg);border:1px solid #e0a090;border-radius:4px;color:var(--red);font-size:10px;padding:3px 8px;cursor:pointer;font-family:'DM Mono',monospace">Remove</button>
+      </div>`;
+
+    // Expandable category section
+    const catSection = document.createElement('div');
+    catSection.id = 'cats_'+safeId;
+    catSection.style.cssText='display:none;padding:10px;background:var(--bg2);border-top:1px solid var(--border)';
+
+    // Category list
+    cats.forEach(c=>{
+      const crow = document.createElement('div');
+      crow.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:5px;margin-bottom:5px';
+      crow.innerHTML=`<span style="font-size:11px;color:var(--text)">${esc(c)}</span>
+        <button onclick="deleteCatFromProp('${esc(p)}','${esc(c)}')" style="background:var(--red-bg);border:1px solid #e0a090;border-radius:4px;color:var(--red);font-size:10px;padding:2px 7px;cursor:pointer;font-family:'DM Mono',monospace">−</button>`;
+      catSection.appendChild(crow);
+    });
+
+    // Add category input
+    const addRow = document.createElement('div');
+    addRow.style.cssText='display:flex;gap:6px;margin-top:6px';
+    addRow.innerHTML=`
+      <input id="newCat_${safeId}" type="text" placeholder="New category..." style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text);outline:none" />
+      <button onclick="addCatToProp('${esc(p)}')" style="padding:7px 12px;background:var(--gold);color:#fff;border:none;border-radius:6px;font-family:'DM Mono',monospace;font-size:11px;cursor:pointer">+ Add</button>`;
+    catSection.appendChild(addRow);
+
+    // Toggle expand on header click
+    header.onclick = ()=>{
+      const isOpen = catSection.style.display !== 'none';
+      catSection.style.display = isOpen ? 'none' : 'block';
+      document.getElementById('arrow_'+safeId).textContent = isOpen ? '▶' : '▼';
+    };
+
+    wrapper.appendChild(header);
+    wrapper.appendChild(catSection);
+    el.appendChild(wrapper);
   });
 }
 function openSettings(){
@@ -656,13 +751,9 @@ function toggleSign(){
 
 /* ── DROPDOWNS ────────────────────────────────────── */
 function onPropertyChange(){
-  const prop=document.getElementById('fProperty').value;
-  const sel=document.getElementById('fCategory');
-  sel.innerHTML='<option value="">— Select category —</option>';
-  sel.disabled=!prop; if(!prop)return;
-  ALL_CODES.filter(x=>x.p===prop).forEach(x=>{
-    const o=document.createElement('option');o.value=x.c;o.textContent=x.c;sel.appendChild(o);
-  });
+  const prop = document.getElementById('fProperty').value;
+  refreshCategoryDropdown(prop);
+  document.getElementById('fCategory').disabled = !prop;
 }
 
 /* ── SAVE / RESET ─────────────────────────────────── */
